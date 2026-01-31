@@ -471,12 +471,12 @@ contract StrategyVaultTest is Test {
 
     function test_depositETH_succeeds() public {
         uint256 depositAmount = 5 ether;
-        
+
         vm.expectEmit(true, false, false, true);
         emit ETHDeposited(address(this), depositAmount);
-        
+
         strategyVault.depositETH{value: depositAmount}();
-        
+
         assertEq(address(strategyVault).balance, depositAmount);
     }
 
@@ -488,25 +488,25 @@ contract StrategyVaultTest is Test {
     function test_withdrawETH_succeeds() public {
         uint256 depositAmount = 5 ether;
         uint256 withdrawAmount = 2 ether;
-        
+
         strategyVault.depositETH{value: depositAmount}();
-        
+
         uint256 balanceBefore = address(this).balance;
-        
+
         vm.expectEmit(true, false, false, true);
         emit ETHWithdrawn(address(this), withdrawAmount);
-        
+
         strategyVault.withdrawETH(withdrawAmount);
-        
+
         assertEq(address(strategyVault).balance, depositAmount - withdrawAmount);
         assertEq(address(this).balance, balanceBefore + withdrawAmount);
     }
 
     function test_withdrawETH_reverts_insufficient_balance() public {
         uint256 depositAmount = 1 ether;
-        
+
         strategyVault.depositETH{value: depositAmount}();
-        
+
         vm.expectRevert("Insufficient balance");
         strategyVault.withdrawETH(2 ether);
     }
@@ -629,14 +629,14 @@ contract StrategyVaultTest is Test {
 
     function test_recharge_succeeds() public {
         uint256 rechargeAmount = 1 ether;
-        
+
         uint256 balanceBefore = strategyVault.executionBalance();
-        
+
         vm.expectEmit(false, false, false, true);
         emit VaultRecharged(rechargeAmount);
-        
+
         strategyVault.recharge{value: rechargeAmount}();
-        
+
         assertEq(strategyVault.executionBalance(), balanceBefore + rechargeAmount);
         assertEq(address(strategyVault).balance, rechargeAmount);
     }
@@ -706,7 +706,7 @@ contract StrategyVaultTest is Test {
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
 
         strategyVault.recharge{value: 0.01 ether}();
-        
+
         address feeRecipient = strategyVault.feeRecipient();
         uint256 recipientBalanceBefore = feeRecipient.balance;
         uint256 fee = strategyVault.executionFee();
@@ -733,7 +733,7 @@ contract StrategyVaultTest is Test {
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
 
         strategyVault.recharge{value: 0.01 ether}();
-        
+
         uint256 executorBalanceBefore = address(this).balance;
         uint256 fee = strategyVault.executionFee();
 
@@ -759,7 +759,7 @@ contract StrategyVaultTest is Test {
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
 
         strategyVault.recharge{value: 0.01 ether}();
-        
+
         address feeRecipient = strategyVault.feeRecipient();
         uint256 recipientBalanceBefore = feeRecipient.balance;
         uint256 executorBalanceBefore = address(this).balance;
@@ -950,7 +950,7 @@ contract StrategyVaultTest is Test {
     function test_depositETH_reverts_when_not_owner() public {
         address nonOwner = address(0x1234);
         vm.deal(nonOwner, 10 ether);
-        
+
         vm.prank(nonOwner);
         vm.expectRevert("Not owner");
         strategyVault.depositETH{value: 1 ether}();
@@ -958,7 +958,7 @@ contract StrategyVaultTest is Test {
 
     function test_withdrawETH_reverts_when_not_owner() public {
         strategyVault.depositETH{value: 1 ether}();
-        
+
         vm.prank(address(0x1234));
         vm.expectRevert("Not owner");
         strategyVault.withdrawETH(0.5 ether);
@@ -966,13 +966,13 @@ contract StrategyVaultTest is Test {
 
     function test_withdrawETH_reverts_when_transfer_fails() public {
         RejectETH rejecter = new RejectETH();
-        
+
         StrategyVault rejecterVault = new StrategyVault(address(rejecter), address(0x9999));
-        
+
         vm.deal(address(this), 10 ether);
-        (bool sent, ) = payable(address(rejecterVault)).call{value: 1 ether}("");
+        (bool sent,) = payable(address(rejecterVault)).call{value: 1 ether}("");
         require(sent, "Failed to send ETH to vault");
-        
+
         vm.prank(address(rejecter));
         vm.expectRevert("ETH transfer failed");
         rejecterVault.withdrawETH(0.5 ether);
@@ -981,7 +981,7 @@ contract StrategyVaultTest is Test {
     function test_recharge_reverts_when_not_owner() public {
         address nonOwner = address(0x1234);
         vm.deal(nonOwner, 10 ether);
-        
+
         vm.prank(nonOwner);
         vm.expectRevert("Not owner");
         strategyVault.recharge{value: 1 ether}();
@@ -989,7 +989,7 @@ contract StrategyVaultTest is Test {
 
     function test_executeStrategy_reverts_when_invalid_strategy() public {
         strategyVault.recharge{value: 0.01 ether}();
-        
+
         vm.expectRevert("Invalid strategy");
         strategyVault.executeStrategy(999, abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether));
     }
@@ -1050,7 +1050,8 @@ contract StrategyVaultTest is Test {
             amountSource: StrategyVault.AmountSource.CALLDATA
         });
 
-        uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 1 hours, block.timestamp + 1 days);
+        uint256 strategyId =
+            strategyVault.createStrategy(conditions, action, 1 ether, 1 hours, block.timestamp + 1 days);
         strategyVault.recharge{value: 0.1 ether}();
 
         strategyVault.executeStrategy(strategyId, abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether));
@@ -1077,8 +1078,10 @@ contract StrategyVaultTest is Test {
 
         target.setRevert(true);
         for (uint8 i = 0; i < 3; i++) {
-            try strategyVault.executeStrategy(strategyId, abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether)) {}
-            catch {}
+            try strategyVault.executeStrategy(
+                strategyId, abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether)
+            ) {}
+                catch {}
         }
 
         vm.expectRevert("Strategy paused");
@@ -1142,7 +1145,9 @@ contract StrategyVaultTest is Test {
         strategyVault.recharge{value: 0.01 ether}();
 
         vm.expectRevert("Action not payable");
-        strategyVault.executeStrategy{value: 0.5 ether}(strategyId, abi.encodeWithSelector(MockTarget.doThing.selector, 0));
+        strategyVault.executeStrategy{value: 0.5 ether}(
+            strategyId, abi.encodeWithSelector(MockTarget.doThing.selector, 0)
+        );
     }
 
     function test_executeStrategy_emits_failed_event() public {
@@ -1191,7 +1196,7 @@ contract StrategyVaultTest is Test {
 
     function test_executeStrategy_reverts_when_fee_transfer_fails() public {
         RejectETH rejecter = new RejectETH();
-        
+
         StrategyVault rejecterVault = new StrategyVault(address(this), address(rejecter));
         rejecterVault.allowAction(address(target), MockTarget.doThing.selector);
 
@@ -1216,9 +1221,9 @@ contract StrategyVaultTest is Test {
 
     function test_executeStrategy_reverts_when_executor_fee_transfer_fails() public {
         RejectETH rejecter = new RejectETH();
-        
+
         StrategyVault rejecterVault = new StrategyVault(address(rejecter), address(0x9999));
-        
+
         vm.prank(address(rejecter));
         rejecterVault.allowAction(address(target), MockTarget.doThing.selector);
 
@@ -1236,7 +1241,7 @@ contract StrategyVaultTest is Test {
 
         vm.prank(address(rejecter));
         uint256 strategyId = rejecterVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
-        
+
         // Fund the rejecter contract so it can call recharge
         vm.deal(address(rejecter), 10 ether);
         vm.prank(address(rejecter));
@@ -1292,12 +1297,13 @@ contract StrategyVaultTest is Test {
         vm.expectRevert("Arg out of bounds");
         strategyVault.executeStrategy(strategyId, abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether));
     }
-    
+
     receive() external payable {}
 }
 
 // Helper contract that rejects ETH
 contract RejectETH {
     // No fallback or receive function, so it rejects ETH
-}
+
+    }
 

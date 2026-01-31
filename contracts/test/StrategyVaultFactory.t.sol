@@ -68,15 +68,15 @@ contract StrategyVaultFactoryTest is Test {
 
     function testUpdateProtocolTreasury() public {
         address newTreasury = address(0x7777);
-        
+
         factory.updateProtocolTreasury(newTreasury);
-        
+
         assertEq(factory.protocolTreasury(), newTreasury);
     }
 
     function testUpdateProtocolTreasury_reverts_when_not_owner() public {
         address newTreasury = address(0x7777);
-        
+
         vm.prank(user);
         vm.expectRevert("Not owner");
         factory.updateProtocolTreasury(newTreasury);
@@ -93,7 +93,7 @@ contract StrategyVaultFactoryTest is Test {
     function testVault_has_correct_feeRecipient() public {
         vm.prank(user);
         address vaultAddr = factory.createVault();
-        
+
         StrategyVault vault = StrategyVault(payable(vaultAddr));
         assertEq(vault.feeRecipient(), address(0x8888));
     }
@@ -101,40 +101,40 @@ contract StrategyVaultFactoryTest is Test {
     function testVault_has_correct_owner() public {
         vm.prank(user);
         address vaultAddr = factory.createVault();
-        
+
         StrategyVault vault = StrategyVault(payable(vaultAddr));
         assertEq(vault.owner(), user);
     }
 
     function testVaultCreated_event_emitted() public {
         vm.prank(user);
-        
+
         vm.expectEmit(true, false, false, false);
         emit VaultCreated(user, address(0));
-        
+
         factory.createVault();
     }
 
     function testUpdateProtocolTreasury_updates_existing_treasury() public {
         address newTreasury = address(0x7777);
         address oldTreasury = factory.protocolTreasury();
-        
+
         assertEq(oldTreasury, address(0x8888));
-        
+
         factory.updateProtocolTreasury(newTreasury);
-        
+
         assertEq(factory.protocolTreasury(), newTreasury);
         assertTrue(factory.protocolTreasury() != oldTreasury);
     }
 
     function testNewVault_uses_updated_treasury() public {
         address newTreasury = address(0x7777);
-        
+
         factory.updateProtocolTreasury(newTreasury);
-        
+
         vm.prank(user);
         address vaultAddr = factory.createVault();
-        
+
         StrategyVault vault = StrategyVault(payable(vaultAddr));
         assertEq(vault.feeRecipient(), newTreasury);
     }
@@ -153,7 +153,7 @@ contract StrategyVaultFactoryTest is Test {
         vm.stopPrank();
 
         address[] memory userVaults = factory.getUserVaults(user);
-        
+
         assertEq(userVaults.length, 3);
         assertEq(userVaults[0], vault1);
         assertEq(userVaults[1], vault2);
@@ -163,13 +163,13 @@ contract StrategyVaultFactoryTest is Test {
     function testMultipleUsers_independent_vault_lists() public {
         vm.prank(user);
         address userVault1 = factory.createVault();
-        
+
         vm.prank(anotherUser);
         address anotherVault1 = factory.createVault();
-        
+
         vm.prank(user);
         address userVault2 = factory.createVault();
-        
+
         vm.prank(anotherUser);
         address anotherVault2 = factory.createVault();
 
@@ -178,7 +178,7 @@ contract StrategyVaultFactoryTest is Test {
 
         assertEq(user1Vaults.length, 2);
         assertEq(user2Vaults.length, 2);
-        
+
         assertEq(user1Vaults[0], userVault1);
         assertEq(user1Vaults[1], userVault2);
         assertEq(user2Vaults[0], anotherVault1);

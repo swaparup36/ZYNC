@@ -41,9 +41,9 @@ contract StrategyVault {
     }
 
     enum AmountSource {
-        CALLDATA,   // amount comes from calldata
-        MSG_VALUE,  // amount comes from msg.value
-        NONE        // no amount involved
+        CALLDATA, // amount comes from calldata
+        MSG_VALUE, // amount comes from msg.value
+        NONE // no amount involved
     }
 
     mapping(address => mapping(bytes4 => bool)) allowedActions;
@@ -181,10 +181,7 @@ contract StrategyVault {
     }
 
     function executeStrategy(uint256 strategyId, bytes calldata data) external payable {
-        require(
-            executionBalance >= executionFee,
-            "Insufficient execution balance"
-        );
+        require(executionBalance >= executionFee, "Insufficient execution balance");
         require(strategyId < strategies.length, "Invalid strategy");
 
         Strategy storage strategy = strategies[strategyId];
@@ -192,8 +189,7 @@ contract StrategyVault {
         require(!strategy.paused, "Strategy paused");
         require(block.timestamp < strategy.expiry, "Strategy expired");
         require(
-            strategy.lastExecution == 0 ||
-            block.timestamp >= strategy.lastExecution + strategy.cooldown,
+            strategy.lastExecution == 0 || block.timestamp >= strategy.lastExecution + strategy.cooldown,
             "Cooldown active"
         );
         require(strategy.failureCount < MAX_FAILURES, "Strategy disabled");
@@ -208,10 +204,7 @@ contract StrategyVault {
         }
 
         require(selector == strategy.action.selector, "Selector mismatch");
-        require(
-            allowedActions[strategy.action.target][selector],
-            "Action not allowed"
-        );
+        require(allowedActions[strategy.action.target][selector], "Action not allowed");
 
         uint256 amount = 0;
 
@@ -234,7 +227,7 @@ contract StrategyVault {
 
         strategy.lastExecution = block.timestamp;
 
-        (bool success, ) = strategy.action.target.call{value: msg.value}(data);
+        (bool success,) = strategy.action.target.call{value: msg.value}(data);
 
         if (!success) {
             strategy.failureCount += 1;
@@ -249,12 +242,12 @@ contract StrategyVault {
 
         executionBalance -= executionFee;
         // Pay the half execution fee to the feeRecipient and half to msg.sender
-        (bool ok, ) = payable(feeRecipient).call{value: executionFee / 2}("");
+        (bool ok,) = payable(feeRecipient).call{value: executionFee / 2}("");
         require(ok, "Fee transfer failed");
 
-        (ok, ) = payable(msg.sender).call{value: executionFee / 2}("");
+        (ok,) = payable(msg.sender).call{value: executionFee / 2}("");
         require(ok, "Executor fee transfer failed");
-        
+
         strategy.failureCount = 0;
         emit StrategyExecuted(strategyId);
     }
@@ -268,7 +261,7 @@ contract StrategyVault {
         require(amount > 0, "Invalid amount");
         require(address(this).balance - executionBalance >= amount, "Insufficient balance");
 
-        (bool ok, ) = payable(msg.sender).call{value: amount}("");
+        (bool ok,) = payable(msg.sender).call{value: amount}("");
         require(ok, "ETH transfer failed");
 
         emit ETHWithdrawn(msg.sender, amount);
@@ -282,5 +275,4 @@ contract StrategyVault {
 
     // Fallback function to receive ETH
     receive() external payable {}
-
 }

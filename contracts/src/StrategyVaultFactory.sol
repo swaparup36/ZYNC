@@ -21,7 +21,6 @@ contract StrategyVaultFactory {
         _;
     }
 
-
     function createVault() external returns (address vault) {
         StrategyVault vaultInstance = new StrategyVault(msg.sender, protocolTreasury);
         vault = address(vaultInstance);
