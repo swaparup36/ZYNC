@@ -8,7 +8,7 @@ interface OracleInterface {
 contract StrategyVault {
     address public immutable owner;
     Strategy[] strategies;
-    
+
     struct Strategy {
         Condition[] conditions;
         Action action;
@@ -30,6 +30,8 @@ contract StrategyVault {
         address target;
         bytes4 selector;
         uint8 amountIndex;
+        bool isPayable;
+        AmountSource amountSource;
     }
 
     enum Operator {
@@ -38,12 +40,23 @@ contract StrategyVault {
         EQ // Equal To
     }
 
+    enum AmountSource {
+        CALLDATA,   // amount comes from calldata
+        MSG_VALUE,  // amount comes from msg.value
+        NONE        // no amount involved
+    }
+
     mapping(address => mapping(bytes4 => bool)) allowedActions;
     uint8 MAX_FAILURES;
+    uint256 public executionFee; // e.g. 0.001 ETH
+    uint256 public executionBalance;
+    address public feeRecipient;
 
-    constructor(address _owner) {
+    constructor(address _owner, address _feeRecipient) {
         owner = _owner;
+        feeRecipient = _feeRecipient;
         MAX_FAILURES = 3;
+        executionFee = 0.0003 ether; // Default execution fee
     }
 
     event StrategyCreated(uint256 indexed strategyId);
@@ -51,8 +64,11 @@ contract StrategyVault {
     event ActionDisallowed(address indexed target, bytes4 indexed selector);
     event StrategyExecuted(uint256 indexed strategyId);
     event StrategyExecutionFailed(uint256 strategyId);
+    event ETHDeposited(address indexed user, uint256 amount);
+    event ETHWithdrawn(address indexed user, uint256 amount);
+    event VaultRecharged(uint256 amount);
 
-    modifier onlyOwner {
+    modifier onlyOwner() {
         require(msg.sender == owner, "Not owner");
         _;
     }
@@ -71,11 +87,11 @@ contract StrategyVault {
         strategies.push();
         uint256 strategyId = strategies.length - 1;
         Strategy storage strategy = strategies[strategyId];
-        
+
         for (uint256 i = 0; i < conditions.length; i++) {
             strategy.conditions.push(conditions[i]);
         }
-        
+
         strategy.action = action;
         strategy.maxAmount = maxAmount;
         strategy.cooldown = cooldown;
@@ -83,7 +99,7 @@ contract StrategyVault {
         strategy.expiry = expiry;
         strategy.paused = false;
         strategy.failureCount = 0;
-        
+
         emit StrategyCreated(strategyId);
         return strategyId;
     }
@@ -131,7 +147,6 @@ contract StrategyVault {
             return false;
         }
 
-
         Strategy storage strategy = strategies[strategyId];
 
         if (strategy.paused) return false;
@@ -166,33 +181,60 @@ contract StrategyVault {
     }
 
     function executeStrategy(uint256 strategyId, bytes calldata data) external payable {
+        require(
+            executionBalance >= executionFee,
+            "Insufficient execution balance"
+        );
         require(strategyId < strategies.length, "Invalid strategy");
-        
+
         Strategy storage strategy = strategies[strategyId];
 
         require(!strategy.paused, "Strategy paused");
         require(block.timestamp < strategy.expiry, "Strategy expired");
-        require(strategy.lastExecution == 0 || block.timestamp >= strategy.lastExecution + strategy.cooldown, "Cooldown active");
+        require(
+            strategy.lastExecution == 0 ||
+            block.timestamp >= strategy.lastExecution + strategy.cooldown,
+            "Cooldown active"
+        );
         require(strategy.failureCount < MAX_FAILURES, "Strategy disabled");
 
         require(_checkConditions(strategyId), "Conditions not met");
 
         require(data.length >= 4, "Invalid calldata");
+
         bytes4 selector;
         assembly {
             selector := calldataload(data.offset)
         }
-        uint256 amount = _extractAmount(data, strategy.action.amountIndex);
-        
-        require(amount <= strategy.maxAmount, "Amount exceeds maxAmount");
-        // ETH value is bounded by maxAmount if function is payable
-        require(msg.value <= strategy.maxAmount, "ETH exceeds maxAmount");
+
         require(selector == strategy.action.selector, "Selector mismatch");
-        require(allowedActions[strategy.action.target][selector], "Action not allowed");
+        require(
+            allowedActions[strategy.action.target][selector],
+            "Action not allowed"
+        );
+
+        uint256 amount = 0;
+
+        if (strategy.action.amountSource == AmountSource.CALLDATA) {
+            // ERC20 style or calldata-based amount
+            amount = _extractAmount(data, strategy.action.amountIndex);
+            require(amount <= strategy.maxAmount, "Amount exceeds maxAmount");
+            require(msg.value == 0, "ETH not allowed for calldata-based action");
+        } else if (strategy.action.amountSource == AmountSource.MSG_VALUE) {
+            // Payable ETH-based action
+            require(strategy.action.isPayable, "Action not payable");
+            require(msg.value > 0, "ETH required");
+            require(msg.value <= strategy.maxAmount, "ETH exceeds maxAmount");
+            amount = msg.value;
+        } else if (strategy.action.amountSource == AmountSource.NONE) {
+            // Pure call, no value transfer
+            require(msg.value == 0, "ETH not allowed");
+            amount = 0;
+        }
 
         strategy.lastExecution = block.timestamp;
 
-        (bool success, ) = strategy.action.target.call(data);
+        (bool success, ) = strategy.action.target.call{value: msg.value}(data);
 
         if (!success) {
             strategy.failureCount += 1;
@@ -202,9 +244,43 @@ contract StrategyVault {
             }
 
             emit StrategyExecutionFailed(strategyId);
-        } else {
-            strategy.failureCount = 0;
-            emit StrategyExecuted(strategyId);
+            return;
         }
+
+        executionBalance -= executionFee;
+        // Pay the half execution fee to the feeRecipient and half to msg.sender
+        (bool ok, ) = payable(feeRecipient).call{value: executionFee / 2}("");
+        require(ok, "Fee transfer failed");
+
+        (ok, ) = payable(msg.sender).call{value: executionFee / 2}("");
+        require(ok, "Executor fee transfer failed");
+        
+        strategy.failureCount = 0;
+        emit StrategyExecuted(strategyId);
     }
+
+    function depositETH() external payable onlyOwner {
+        require(msg.value > 0, "No ETH sent");
+        emit ETHDeposited(msg.sender, msg.value);
+    }
+
+    function withdrawETH(uint256 amount) external onlyOwner {
+        require(amount > 0, "Invalid amount");
+        require(address(this).balance - executionBalance >= amount, "Insufficient balance");
+
+        (bool ok, ) = payable(msg.sender).call{value: amount}("");
+        require(ok, "ETH transfer failed");
+
+        emit ETHWithdrawn(msg.sender, amount);
+    }
+
+    function recharge() external payable onlyOwner {
+        require(msg.value > 0, "No ETH sent");
+        executionBalance += msg.value;
+        emit VaultRecharged(msg.value);
+    }
+
+    // Fallback function to receive ETH
+    receive() external payable {}
+
 }
