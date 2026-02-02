@@ -44,7 +44,9 @@ contract SmartVaultScript is Script {
             selector: MockTarget.doThing.selector,
             amountIndex: 0,
             isPayable: false,
-            amountSource: StrategyVault.AmountSource.CALLDATA
+            amountSource: StrategyVault.AmountSource.CALLDATA,
+            value: 0,
+            data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether)
         });
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
 
@@ -54,7 +56,7 @@ contract SmartVaultScript is Script {
         // Execute strategy - execution fee (0.0003 ETH) will be split 50/50:
         // - 0.00015 ETH to protocol treasury (feeRecipient)
         // - 0.00015 ETH to executor (msg.sender)
-        strategyVault.executeStrategy(strategyId, abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether));
+        strategyVault.executeStrategy(strategyId);
 
         vm.stopBroadcast();
     }

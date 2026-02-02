@@ -5,11 +5,13 @@ import {Test} from "forge-std/Test.sol";
 import {StrategyVault} from "../src/StrategyVault.sol";
 import {MockOracle} from "./mocks/MockOracle.sol";
 import {MockTarget} from "./mocks/MockTarget.sol";
+import {MockERC20} from "./mocks/MockERC20.sol";
 
 contract StrategyVaultTest is Test {
     StrategyVault public strategyVault;
     MockOracle public oracle;
     MockTarget public target;
+    MockERC20 public token;
 
     event ETHDeposited(address indexed user, uint256 amount);
     event ETHWithdrawn(address indexed user, uint256 amount);
@@ -23,6 +25,7 @@ contract StrategyVaultTest is Test {
     function setUp() public {
         oracle = new MockOracle();
         target = new MockTarget();
+        token = new MockERC20("Test Token", "TEST");
         strategyVault = new StrategyVault(address(this), address(0x9999));
 
         strategyVault.allowAction(address(target), MockTarget.doThing.selector);
@@ -40,7 +43,9 @@ contract StrategyVaultTest is Test {
             selector: MockTarget.doThing.selector,
             amountIndex: 0,
             isPayable: false,
-            amountSource: StrategyVault.AmountSource.CALLDATA
+            amountSource: StrategyVault.AmountSource.CALLDATA,
+            value: 0,
+            data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
@@ -59,7 +64,9 @@ contract StrategyVaultTest is Test {
             selector: MockTarget.doThing.selector,
             amountIndex: 0,
             isPayable: false,
-            amountSource: StrategyVault.AmountSource.CALLDATA
+            amountSource: StrategyVault.AmountSource.CALLDATA,
+            value: 0,
+            data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
@@ -78,7 +85,9 @@ contract StrategyVaultTest is Test {
             selector: MockTarget.doThing.selector,
             amountIndex: 0,
             isPayable: false,
-            amountSource: StrategyVault.AmountSource.CALLDATA
+            amountSource: StrategyVault.AmountSource.CALLDATA,
+            value: 0,
+            data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
@@ -97,7 +106,9 @@ contract StrategyVaultTest is Test {
             selector: MockTarget.doThing.selector,
             amountIndex: 0,
             isPayable: false,
-            amountSource: StrategyVault.AmountSource.CALLDATA
+            amountSource: StrategyVault.AmountSource.CALLDATA,
+            value: 0,
+            data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
@@ -116,7 +127,9 @@ contract StrategyVaultTest is Test {
             selector: MockTarget.doThing.selector,
             amountIndex: 0,
             isPayable: false,
-            amountSource: StrategyVault.AmountSource.CALLDATA
+            amountSource: StrategyVault.AmountSource.CALLDATA,
+            value: 0,
+            data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
@@ -135,7 +148,9 @@ contract StrategyVaultTest is Test {
             selector: MockTarget.doThing.selector,
             amountIndex: 0,
             isPayable: false,
-            amountSource: StrategyVault.AmountSource.CALLDATA
+            amountSource: StrategyVault.AmountSource.CALLDATA,
+            value: 0,
+            data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
@@ -154,7 +169,9 @@ contract StrategyVaultTest is Test {
             selector: MockTarget.doThing.selector,
             amountIndex: 0,
             isPayable: false,
-            amountSource: StrategyVault.AmountSource.CALLDATA
+            amountSource: StrategyVault.AmountSource.CALLDATA,
+            value: 0,
+            data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
@@ -175,7 +192,9 @@ contract StrategyVaultTest is Test {
             selector: MockTarget.doThing.selector,
             amountIndex: 0,
             isPayable: false,
-            amountSource: StrategyVault.AmountSource.CALLDATA
+            amountSource: StrategyVault.AmountSource.CALLDATA,
+            value: 0,
+            data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 hours);
@@ -197,7 +216,9 @@ contract StrategyVaultTest is Test {
             selector: MockTarget.doThing.selector,
             amountIndex: 0,
             isPayable: false,
-            amountSource: StrategyVault.AmountSource.CALLDATA
+            amountSource: StrategyVault.AmountSource.CALLDATA,
+            value: 0,
+            data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether)
         });
 
         uint256 strategyId =
@@ -208,7 +229,7 @@ contract StrategyVaultTest is Test {
 
         // Simulate execution to set lastExecution time
         vm.prank(address(this));
-        strategyVault.executeStrategy(strategyId, abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether));
+        strategyVault.executeStrategy(strategyId);
 
         // Immediately check canExecute, should be false due to cooldown
         bool canExecute = strategyVault.canExecute(strategyId);
@@ -225,7 +246,9 @@ contract StrategyVaultTest is Test {
             selector: MockTarget.doThing.selector,
             amountIndex: 0,
             isPayable: false,
-            amountSource: StrategyVault.AmountSource.CALLDATA
+            amountSource: StrategyVault.AmountSource.CALLDATA,
+            value: 0,
+            data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
@@ -239,9 +262,7 @@ contract StrategyVaultTest is Test {
         // Manually increment failureCount to exceed MAX_FAILURES
         for (uint8 i = 0; i < 4; i++) {
             vm.prank(address(this));
-            try strategyVault.executeStrategy(
-                strategyId, abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether)
-            ) {
+            try strategyVault.executeStrategy(strategyId) {
             // Do nothing
             }
                 catch {
@@ -262,7 +283,9 @@ contract StrategyVaultTest is Test {
             selector: MockTarget.doThing.selector,
             amountIndex: 0,
             isPayable: false,
-            amountSource: StrategyVault.AmountSource.CALLDATA
+            amountSource: StrategyVault.AmountSource.CALLDATA,
+            value: 0,
+            data: abi.encodeWithSelector(MockTarget.doAnotherThing.selector, 0.5 ether)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
@@ -271,7 +294,7 @@ contract StrategyVaultTest is Test {
         strategyVault.allowAction(address(target), MockTarget.doAnotherThing.selector);
 
         vm.expectRevert("Selector mismatch");
-        strategyVault.executeStrategy(strategyId, abi.encodeWithSelector(MockTarget.doAnotherThing.selector, 0.5 ether));
+        strategyVault.executeStrategy(strategyId);
     }
 
     function test_execute_reverts_when_action_not_allowlisted() public {
@@ -284,7 +307,9 @@ contract StrategyVaultTest is Test {
             selector: MockTarget.doAnotherThingThatIsNowAllowed.selector,
             amountIndex: 0,
             isPayable: false,
-            amountSource: StrategyVault.AmountSource.CALLDATA
+            amountSource: StrategyVault.AmountSource.CALLDATA,
+            value: 0,
+            data: abi.encodeWithSelector(MockTarget.doAnotherThingThatIsNowAllowed.selector, 0.5 ether)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
@@ -293,9 +318,7 @@ contract StrategyVaultTest is Test {
         strategyVault.disallowAction(address(target), MockTarget.doAnotherThingThatIsNowAllowed.selector);
 
         vm.expectRevert("Action not allowed");
-        strategyVault.executeStrategy(
-            strategyId, abi.encodeWithSelector(MockTarget.doAnotherThingThatIsNowAllowed.selector, 0.5 ether)
-        );
+        strategyVault.executeStrategy(strategyId);
     }
 
     function test_execute_reverts_when_amount_exceeds_max() public {
@@ -308,14 +331,16 @@ contract StrategyVaultTest is Test {
             selector: MockTarget.doThing.selector,
             amountIndex: 0,
             isPayable: false,
-            amountSource: StrategyVault.AmountSource.CALLDATA
+            amountSource: StrategyVault.AmountSource.CALLDATA,
+            value: 0,
+            data: abi.encodeWithSelector(MockTarget.doThing.selector, 2 ether)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
 
         strategyVault.recharge{value: 0.01 ether}();
         vm.expectRevert("Amount exceeds maxAmount");
-        strategyVault.executeStrategy(strategyId, abi.encodeWithSelector(MockTarget.doThing.selector, 2 ether));
+        strategyVault.executeStrategy(strategyId);
     }
 
     function test_execute_reverts_when_ETH_exceeds_max() public {
@@ -328,16 +353,17 @@ contract StrategyVaultTest is Test {
             selector: MockTarget.doThing.selector,
             amountIndex: 0,
             isPayable: true,
-            amountSource: StrategyVault.AmountSource.MSG_VALUE
+            amountSource: StrategyVault.AmountSource.MSG_VALUE,
+            value: 2 ether,
+            data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
 
         strategyVault.recharge{value: 0.01 ether}();
+        strategyVault.depositETH{value: 2 ether}();
         vm.expectRevert("ETH exceeds maxAmount");
-        strategyVault.executeStrategy{value: 2 ether}(
-            strategyId, abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether)
-        );
+        strategyVault.executeStrategy(strategyId);
     }
 
     function test_execute_succeeds_and_updates_state() public {
@@ -350,13 +376,15 @@ contract StrategyVaultTest is Test {
             selector: MockTarget.doThing.selector,
             amountIndex: 0,
             isPayable: false,
-            amountSource: StrategyVault.AmountSource.CALLDATA
+            amountSource: StrategyVault.AmountSource.CALLDATA,
+            value: 0,
+            data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
 
         strategyVault.recharge{value: 0.01 ether}();
-        strategyVault.executeStrategy(strategyId, abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether));
+        strategyVault.executeStrategy(strategyId);
 
         // Verify that the target's lastAmount was updated
         uint256 lastAmount = target.lastAmount();
@@ -373,7 +401,9 @@ contract StrategyVaultTest is Test {
             selector: MockTarget.doThing.selector,
             amountIndex: 0,
             isPayable: false,
-            amountSource: StrategyVault.AmountSource.CALLDATA
+            amountSource: StrategyVault.AmountSource.CALLDATA,
+            value: 0,
+            data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
@@ -383,7 +413,7 @@ contract StrategyVaultTest is Test {
         // Cause a failure
         target.setRevert(true);
         vm.prank(address(this));
-        try strategyVault.executeStrategy(strategyId, abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether)) {
+        try strategyVault.executeStrategy(strategyId) {
         // Do nothing
         }
             catch {
@@ -392,7 +422,7 @@ contract StrategyVaultTest is Test {
 
         // Execute successfully
         target.setRevert(false);
-        strategyVault.executeStrategy(strategyId, abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether));
+        strategyVault.executeStrategy(strategyId);
 
         // Verify that failureCount is reset
         bool canExecute = strategyVault.canExecute(strategyId);
@@ -409,7 +439,9 @@ contract StrategyVaultTest is Test {
             selector: MockTarget.doThing.selector,
             amountIndex: 0,
             isPayable: false,
-            amountSource: StrategyVault.AmountSource.CALLDATA
+            amountSource: StrategyVault.AmountSource.CALLDATA,
+            value: 0,
+            data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
@@ -421,7 +453,7 @@ contract StrategyVaultTest is Test {
 
         // Cause a failure
         vm.prank(address(this));
-        try strategyVault.executeStrategy(strategyId, abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether)) {
+        try strategyVault.executeStrategy(strategyId) {
         // Do nothing
         }
             catch {
@@ -443,7 +475,9 @@ contract StrategyVaultTest is Test {
             selector: MockTarget.doThing.selector,
             amountIndex: 0,
             isPayable: false,
-            amountSource: StrategyVault.AmountSource.CALLDATA
+            amountSource: StrategyVault.AmountSource.CALLDATA,
+            value: 0,
+            data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
@@ -454,9 +488,7 @@ contract StrategyVaultTest is Test {
         // Cause failures to exceed MAX_FAILURES
         for (uint8 i = 0; i < 4; i++) {
             vm.prank(address(this));
-            try strategyVault.executeStrategy(
-                strategyId, abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether)
-            ) {
+            try strategyVault.executeStrategy(strategyId) {
             // Do nothing
             }
                 catch {
@@ -526,15 +558,16 @@ contract StrategyVaultTest is Test {
             selector: MockTarget.doThing.selector,
             amountIndex: 0,
             isPayable: true,
-            amountSource: StrategyVault.AmountSource.MSG_VALUE
+            amountSource: StrategyVault.AmountSource.MSG_VALUE,
+            value: 0.5 ether,
+            data: abi.encodeWithSelector(MockTarget.doThing.selector, 0)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
 
         strategyVault.recharge{value: 0.01 ether}();
-        strategyVault.executeStrategy{value: 0.5 ether}(
-            strategyId, abi.encodeWithSelector(MockTarget.doThing.selector, 0)
-        );
+        strategyVault.depositETH{value: 0.5 ether}();
+        strategyVault.executeStrategy(strategyId);
 
         // Verify that target received the ETH
         assertEq(address(target).balance, 0.5 ether);
@@ -550,13 +583,15 @@ contract StrategyVaultTest is Test {
             selector: MockTarget.doThing.selector,
             amountIndex: 0,
             isPayable: false,
-            amountSource: StrategyVault.AmountSource.NONE
+            amountSource: StrategyVault.AmountSource.NONE,
+            value: 0,
+            data: abi.encodeWithSelector(MockTarget.doThing.selector, 0)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
 
         strategyVault.recharge{value: 0.01 ether}();
-        strategyVault.executeStrategy(strategyId, abi.encodeWithSelector(MockTarget.doThing.selector, 0));
+        strategyVault.executeStrategy(strategyId);
 
         // Verify that the target function was called
         uint256 lastAmount = target.lastAmount();
@@ -573,16 +608,16 @@ contract StrategyVaultTest is Test {
             selector: MockTarget.doThing.selector,
             amountIndex: 0,
             isPayable: false,
-            amountSource: StrategyVault.AmountSource.CALLDATA
+            amountSource: StrategyVault.AmountSource.CALLDATA,
+            value: 0,
+            data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
 
         strategyVault.recharge{value: 0.01 ether}();
         vm.expectRevert("ETH not allowed for calldata-based action");
-        strategyVault.executeStrategy{value: 0.5 ether}(
-            strategyId, abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether)
-        );
+        strategyVault.executeStrategy{value: 0.1 ether}(strategyId);
     }
 
     function test_execute_reverts_when_ETH_sent_for_NONE_amountSource() public {
@@ -595,16 +630,16 @@ contract StrategyVaultTest is Test {
             selector: MockTarget.doThing.selector,
             amountIndex: 0,
             isPayable: false,
-            amountSource: StrategyVault.AmountSource.NONE
+            amountSource: StrategyVault.AmountSource.NONE,
+            value: 0,
+            data: abi.encodeWithSelector(MockTarget.doThing.selector, 0)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
 
         strategyVault.recharge{value: 0.01 ether}();
         vm.expectRevert("ETH not allowed");
-        strategyVault.executeStrategy{value: 0.5 ether}(
-            strategyId, abi.encodeWithSelector(MockTarget.doThing.selector, 0)
-        );
+        strategyVault.executeStrategy{value: 0.1 ether}(strategyId);
     }
 
     function test_execute_reverts_when_no_ETH_for_MSG_VALUE_amountSource() public {
@@ -617,14 +652,16 @@ contract StrategyVaultTest is Test {
             selector: MockTarget.doThing.selector,
             amountIndex: 0,
             isPayable: true,
-            amountSource: StrategyVault.AmountSource.MSG_VALUE
+            amountSource: StrategyVault.AmountSource.MSG_VALUE,
+            value: 0,
+            data: abi.encodeWithSelector(MockTarget.doThing.selector, 0)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
 
         strategyVault.recharge{value: 0.01 ether}();
         vm.expectRevert("ETH required");
-        strategyVault.executeStrategy(strategyId, abi.encodeWithSelector(MockTarget.doThing.selector, 0));
+        strategyVault.executeStrategy(strategyId);
     }
 
     function test_recharge_succeeds() public {
@@ -656,14 +693,16 @@ contract StrategyVaultTest is Test {
             selector: MockTarget.doThing.selector,
             amountIndex: 0,
             isPayable: false,
-            amountSource: StrategyVault.AmountSource.CALLDATA
+            amountSource: StrategyVault.AmountSource.CALLDATA,
+            value: 0,
+            data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
 
         // Don't recharge, executionBalance is 0
         vm.expectRevert("Insufficient execution balance");
-        strategyVault.executeStrategy(strategyId, abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether));
+        strategyVault.executeStrategy(strategyId);
     }
 
     function test_execute_deducts_executionFee() public {
@@ -676,7 +715,9 @@ contract StrategyVaultTest is Test {
             selector: MockTarget.doThing.selector,
             amountIndex: 0,
             isPayable: false,
-            amountSource: StrategyVault.AmountSource.CALLDATA
+            amountSource: StrategyVault.AmountSource.CALLDATA,
+            value: 0,
+            data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
@@ -685,7 +726,7 @@ contract StrategyVaultTest is Test {
         uint256 balanceBefore = strategyVault.executionBalance();
         uint256 fee = strategyVault.executionFee();
 
-        strategyVault.executeStrategy(strategyId, abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether));
+        strategyVault.executeStrategy(strategyId);
 
         assertEq(strategyVault.executionBalance(), balanceBefore - fee);
     }
@@ -700,7 +741,9 @@ contract StrategyVaultTest is Test {
             selector: MockTarget.doThing.selector,
             amountIndex: 0,
             isPayable: false,
-            amountSource: StrategyVault.AmountSource.CALLDATA
+            amountSource: StrategyVault.AmountSource.CALLDATA,
+            value: 0,
+            data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
@@ -711,7 +754,7 @@ contract StrategyVaultTest is Test {
         uint256 recipientBalanceBefore = feeRecipient.balance;
         uint256 fee = strategyVault.executionFee();
 
-        strategyVault.executeStrategy(strategyId, abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether));
+        strategyVault.executeStrategy(strategyId);
 
         // Half of fee goes to feeRecipient
         assertEq(feeRecipient.balance, recipientBalanceBefore + fee / 2);
@@ -727,7 +770,9 @@ contract StrategyVaultTest is Test {
             selector: MockTarget.doThing.selector,
             amountIndex: 0,
             isPayable: false,
-            amountSource: StrategyVault.AmountSource.CALLDATA
+            amountSource: StrategyVault.AmountSource.CALLDATA,
+            value: 0,
+            data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
@@ -737,7 +782,7 @@ contract StrategyVaultTest is Test {
         uint256 executorBalanceBefore = address(this).balance;
         uint256 fee = strategyVault.executionFee();
 
-        strategyVault.executeStrategy(strategyId, abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether));
+        strategyVault.executeStrategy(strategyId);
 
         // Half of fee goes to executor (msg.sender)
         assertEq(address(this).balance, executorBalanceBefore + fee / 2);
@@ -753,7 +798,9 @@ contract StrategyVaultTest is Test {
             selector: MockTarget.doThing.selector,
             amountIndex: 0,
             isPayable: false,
-            amountSource: StrategyVault.AmountSource.CALLDATA
+            amountSource: StrategyVault.AmountSource.CALLDATA,
+            value: 0,
+            data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
@@ -765,7 +812,7 @@ contract StrategyVaultTest is Test {
         uint256 executorBalanceBefore = address(this).balance;
         uint256 fee = strategyVault.executionFee();
 
-        strategyVault.executeStrategy(strategyId, abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether));
+        strategyVault.executeStrategy(strategyId);
 
         // Verify fee is split 50/50
         assertEq(feeRecipient.balance, recipientBalanceBefore + fee / 2);
@@ -782,7 +829,9 @@ contract StrategyVaultTest is Test {
             selector: MockTarget.doThing.selector,
             amountIndex: 0,
             isPayable: false,
-            amountSource: StrategyVault.AmountSource.CALLDATA
+            amountSource: StrategyVault.AmountSource.CALLDATA,
+            value: 0,
+            data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether)
         });
 
         vm.prank(address(0x1234));
@@ -800,7 +849,9 @@ contract StrategyVaultTest is Test {
             selector: MockTarget.doThing.selector,
             amountIndex: 0,
             isPayable: false,
-            amountSource: StrategyVault.AmountSource.CALLDATA
+            amountSource: StrategyVault.AmountSource.CALLDATA,
+            value: 0,
+            data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether)
         });
 
         vm.expectRevert("Expiry must be in the future");
@@ -815,7 +866,9 @@ contract StrategyVaultTest is Test {
             selector: MockTarget.doThing.selector,
             amountIndex: 0,
             isPayable: false,
-            amountSource: StrategyVault.AmountSource.CALLDATA
+            amountSource: StrategyVault.AmountSource.CALLDATA,
+            value: 0,
+            data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether)
         });
 
         vm.expectRevert("No conditions");
@@ -832,7 +885,9 @@ contract StrategyVaultTest is Test {
             selector: MockTarget.doThing.selector,
             amountIndex: 0,
             isPayable: false,
-            amountSource: StrategyVault.AmountSource.CALLDATA
+            amountSource: StrategyVault.AmountSource.CALLDATA,
+            value: 0,
+            data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether)
         });
 
         vm.expectRevert("Invalid maxAmount");
@@ -849,7 +904,9 @@ contract StrategyVaultTest is Test {
             selector: MockTarget.doThing.selector,
             amountIndex: 0,
             isPayable: false,
-            amountSource: StrategyVault.AmountSource.CALLDATA
+            amountSource: StrategyVault.AmountSource.CALLDATA,
+            value: 0,
+            data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether)
         });
 
         vm.expectEmit(true, false, false, false);
@@ -871,7 +928,9 @@ contract StrategyVaultTest is Test {
             selector: MockTarget.doThing.selector,
             amountIndex: 0,
             isPayable: false,
-            amountSource: StrategyVault.AmountSource.CALLDATA
+            amountSource: StrategyVault.AmountSource.CALLDATA,
+            value: 0,
+            data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
@@ -932,7 +991,9 @@ contract StrategyVaultTest is Test {
             selector: MockTarget.doThing.selector,
             amountIndex: 0,
             isPayable: false,
-            amountSource: StrategyVault.AmountSource.CALLDATA
+            amountSource: StrategyVault.AmountSource.CALLDATA,
+            value: 0,
+            data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
@@ -991,7 +1052,7 @@ contract StrategyVaultTest is Test {
         strategyVault.recharge{value: 0.01 ether}();
 
         vm.expectRevert("Invalid strategy");
-        strategyVault.executeStrategy(999, abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether));
+        strategyVault.executeStrategy(999);
     }
 
     function test_executeStrategy_reverts_when_paused() public {
@@ -1004,7 +1065,9 @@ contract StrategyVaultTest is Test {
             selector: MockTarget.doThing.selector,
             amountIndex: 0,
             isPayable: false,
-            amountSource: StrategyVault.AmountSource.CALLDATA
+            amountSource: StrategyVault.AmountSource.CALLDATA,
+            value: 0,
+            data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
@@ -1012,7 +1075,7 @@ contract StrategyVaultTest is Test {
         strategyVault.recharge{value: 0.01 ether}();
 
         vm.expectRevert("Strategy paused");
-        strategyVault.executeStrategy(strategyId, abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether));
+        strategyVault.executeStrategy(strategyId);
     }
 
     function test_executeStrategy_reverts_when_expired() public {
@@ -1025,7 +1088,9 @@ contract StrategyVaultTest is Test {
             selector: MockTarget.doThing.selector,
             amountIndex: 0,
             isPayable: false,
-            amountSource: StrategyVault.AmountSource.CALLDATA
+            amountSource: StrategyVault.AmountSource.CALLDATA,
+            value: 0,
+            data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 hours);
@@ -1034,7 +1099,7 @@ contract StrategyVaultTest is Test {
         vm.warp(block.timestamp + 2 hours);
 
         vm.expectRevert("Strategy expired");
-        strategyVault.executeStrategy(strategyId, abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether));
+        strategyVault.executeStrategy(strategyId);
     }
 
     function test_executeStrategy_reverts_when_cooldown_active() public {
@@ -1047,17 +1112,19 @@ contract StrategyVaultTest is Test {
             selector: MockTarget.doThing.selector,
             amountIndex: 0,
             isPayable: false,
-            amountSource: StrategyVault.AmountSource.CALLDATA
+            amountSource: StrategyVault.AmountSource.CALLDATA,
+            value: 0,
+            data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether)
         });
 
         uint256 strategyId =
             strategyVault.createStrategy(conditions, action, 1 ether, 1 hours, block.timestamp + 1 days);
         strategyVault.recharge{value: 0.1 ether}();
 
-        strategyVault.executeStrategy(strategyId, abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether));
+        strategyVault.executeStrategy(strategyId);
 
         vm.expectRevert("Cooldown active");
-        strategyVault.executeStrategy(strategyId, abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether));
+        strategyVault.executeStrategy(strategyId);
     }
 
     function test_executeStrategy_reverts_when_strategy_disabled() public {
@@ -1070,7 +1137,9 @@ contract StrategyVaultTest is Test {
             selector: MockTarget.doThing.selector,
             amountIndex: 0,
             isPayable: false,
-            amountSource: StrategyVault.AmountSource.CALLDATA
+            amountSource: StrategyVault.AmountSource.CALLDATA,
+            value: 0,
+            data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
@@ -1078,14 +1147,12 @@ contract StrategyVaultTest is Test {
 
         target.setRevert(true);
         for (uint8 i = 0; i < 3; i++) {
-            try strategyVault.executeStrategy(
-                strategyId, abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether)
-            ) {}
+            try strategyVault.executeStrategy(strategyId) {}
                 catch {}
         }
 
         vm.expectRevert("Strategy paused");
-        strategyVault.executeStrategy(strategyId, abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether));
+        strategyVault.executeStrategy(strategyId);
     }
 
     function test_executeStrategy_reverts_when_conditions_not_met() public {
@@ -1098,14 +1165,16 @@ contract StrategyVaultTest is Test {
             selector: MockTarget.doThing.selector,
             amountIndex: 0,
             isPayable: false,
-            amountSource: StrategyVault.AmountSource.CALLDATA
+            amountSource: StrategyVault.AmountSource.CALLDATA,
+            value: 0,
+            data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
         strategyVault.recharge{value: 0.01 ether}();
 
         vm.expectRevert("Conditions not met");
-        strategyVault.executeStrategy(strategyId, abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether));
+        strategyVault.executeStrategy(strategyId);
     }
 
     function test_executeStrategy_reverts_when_invalid_calldata() public {
@@ -1118,14 +1187,16 @@ contract StrategyVaultTest is Test {
             selector: MockTarget.doThing.selector,
             amountIndex: 0,
             isPayable: false,
-            amountSource: StrategyVault.AmountSource.CALLDATA
+            amountSource: StrategyVault.AmountSource.CALLDATA,
+            value: 0,
+            data: hex""
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
         strategyVault.recharge{value: 0.01 ether}();
 
         vm.expectRevert("Invalid calldata");
-        strategyVault.executeStrategy(strategyId, hex"");
+        strategyVault.executeStrategy(strategyId);
     }
 
     function test_executeStrategy_reverts_when_action_not_payable() public {
@@ -1138,16 +1209,17 @@ contract StrategyVaultTest is Test {
             selector: MockTarget.doThing.selector,
             amountIndex: 0,
             isPayable: false,
-            amountSource: StrategyVault.AmountSource.MSG_VALUE
+            amountSource: StrategyVault.AmountSource.MSG_VALUE,
+            value: 0.5 ether,
+            data: abi.encodeWithSelector(MockTarget.doThing.selector, 0)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
         strategyVault.recharge{value: 0.01 ether}();
+        strategyVault.depositETH{value: 0.5 ether}();
 
         vm.expectRevert("Action not payable");
-        strategyVault.executeStrategy{value: 0.5 ether}(
-            strategyId, abi.encodeWithSelector(MockTarget.doThing.selector, 0)
-        );
+        strategyVault.executeStrategy(strategyId);
     }
 
     function test_executeStrategy_emits_failed_event() public {
@@ -1160,7 +1232,9 @@ contract StrategyVaultTest is Test {
             selector: MockTarget.doThing.selector,
             amountIndex: 0,
             isPayable: false,
-            amountSource: StrategyVault.AmountSource.CALLDATA
+            amountSource: StrategyVault.AmountSource.CALLDATA,
+            value: 0,
+            data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
@@ -1170,7 +1244,7 @@ contract StrategyVaultTest is Test {
 
         vm.expectEmit(false, false, false, true);
         emit StrategyExecutionFailed(strategyId);
-        strategyVault.executeStrategy(strategyId, abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether));
+        strategyVault.executeStrategy(strategyId);
     }
 
     function test_executeStrategy_emits_success_event() public {
@@ -1183,7 +1257,9 @@ contract StrategyVaultTest is Test {
             selector: MockTarget.doThing.selector,
             amountIndex: 0,
             isPayable: false,
-            amountSource: StrategyVault.AmountSource.CALLDATA
+            amountSource: StrategyVault.AmountSource.CALLDATA,
+            value: 0,
+            data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
@@ -1191,7 +1267,7 @@ contract StrategyVaultTest is Test {
 
         vm.expectEmit(true, false, false, false);
         emit StrategyExecuted(strategyId);
-        strategyVault.executeStrategy(strategyId, abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether));
+        strategyVault.executeStrategy(strategyId);
     }
 
     function test_executeStrategy_reverts_when_fee_transfer_fails() public {
@@ -1209,14 +1285,16 @@ contract StrategyVaultTest is Test {
             selector: MockTarget.doThing.selector,
             amountIndex: 0,
             isPayable: false,
-            amountSource: StrategyVault.AmountSource.CALLDATA
+            amountSource: StrategyVault.AmountSource.CALLDATA,
+            value: 0,
+            data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether)
         });
 
         uint256 strategyId = rejecterVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
         rejecterVault.recharge{value: 0.01 ether}();
 
         vm.expectRevert("Fee transfer failed");
-        rejecterVault.executeStrategy(strategyId, abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether));
+        rejecterVault.executeStrategy(strategyId);
     }
 
     function test_executeStrategy_reverts_when_executor_fee_transfer_fails() public {
@@ -1236,7 +1314,9 @@ contract StrategyVaultTest is Test {
             selector: MockTarget.doThing.selector,
             amountIndex: 0,
             isPayable: false,
-            amountSource: StrategyVault.AmountSource.CALLDATA
+            amountSource: StrategyVault.AmountSource.CALLDATA,
+            value: 0,
+            data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether)
         });
 
         vm.prank(address(rejecter));
@@ -1250,7 +1330,7 @@ contract StrategyVaultTest is Test {
         // Executor (rejecter) will fail to receive the executor fee
         vm.prank(address(rejecter));
         vm.expectRevert("Executor fee transfer failed");
-        rejecterVault.executeStrategy(strategyId, abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether));
+        rejecterVault.executeStrategy(strategyId);
     }
 
     function test_canExecute_returns_false_for_invalid_strategy() public {
@@ -1269,12 +1349,14 @@ contract StrategyVaultTest is Test {
             selector: MockTarget.doThing.selector,
             amountIndex: 0,
             isPayable: false,
-            amountSource: StrategyVault.AmountSource.CALLDATA
+            amountSource: StrategyVault.AmountSource.CALLDATA,
+            value: 0,
+            data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
 
-        vm.expectRevert("Invalid oracle value");
+        vm.expectRevert("Invalid oracle answer");
         strategyVault.canExecute(strategyId);
     }
 
@@ -1288,14 +1370,136 @@ contract StrategyVaultTest is Test {
             selector: MockTarget.doThing.selector,
             amountIndex: 10, // Out of bounds
             isPayable: false,
-            amountSource: StrategyVault.AmountSource.CALLDATA
+            amountSource: StrategyVault.AmountSource.CALLDATA,
+            value: 0,
+            data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
         strategyVault.recharge{value: 0.01 ether}();
 
         vm.expectRevert("Arg out of bounds");
-        strategyVault.executeStrategy(strategyId, abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether));
+        strategyVault.executeStrategy(strategyId);
+    }
+
+    function test_oracle_reverts_when_stale_data() public {
+        oracle.setStaleData(true);
+
+        StrategyVault.Condition[] memory conditions = new StrategyVault.Condition[](1);
+        conditions[0] =
+            StrategyVault.Condition({oracle: address(oracle), operator: StrategyVault.Operator.LT, value: 200});
+
+        StrategyVault.Action memory action = StrategyVault.Action({
+            target: address(target),
+            selector: MockTarget.doThing.selector,
+            amountIndex: 0,
+            isPayable: false,
+            amountSource: StrategyVault.AmountSource.CALLDATA,
+            value: 0,
+            data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether)
+        });
+
+        uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
+
+        vm.expectRevert("Stale oracle data");
+        strategyVault.canExecute(strategyId);
+    }
+
+    function test_depositToken_succeeds() public {
+        uint256 depositAmount = 100 ether;
+        
+        token.approve(address(strategyVault), depositAmount);
+        
+        uint256 vaultBalanceBefore = strategyVault.tokenBalance(address(token));
+        uint256 userBalanceBefore = token.balanceOf(address(this));
+        
+        strategyVault.depositToken(address(token), depositAmount);
+        
+        assertEq(strategyVault.tokenBalance(address(token)), vaultBalanceBefore + depositAmount);
+        assertEq(token.balanceOf(address(this)), userBalanceBefore - depositAmount);
+    }
+
+    function test_depositToken_reverts_when_not_owner() public {
+        uint256 depositAmount = 100 ether;
+        address nonOwner = address(0x1234);
+        
+        token.mint(nonOwner, depositAmount);
+        
+        vm.startPrank(nonOwner);
+        token.approve(address(strategyVault), depositAmount);
+        
+        vm.expectRevert("Not owner");
+        strategyVault.depositToken(address(token), depositAmount);
+        vm.stopPrank();
+    }
+
+    function test_depositToken_reverts_when_invalid_token() public {
+        vm.expectRevert("Invalid token");
+        strategyVault.depositToken(address(0), 100 ether);
+    }
+
+    function test_depositToken_reverts_when_invalid_amount() public {
+        vm.expectRevert("Invalid amount");
+        strategyVault.depositToken(address(token), 0);
+    }
+
+    function test_withdrawToken_succeeds() public {
+        uint256 depositAmount = 100 ether;
+        uint256 withdrawAmount = 50 ether;
+        
+        token.approve(address(strategyVault), depositAmount);
+        strategyVault.depositToken(address(token), depositAmount);
+        
+        uint256 vaultBalanceBefore = strategyVault.tokenBalance(address(token));
+        uint256 userBalanceBefore = token.balanceOf(address(this));
+        
+        strategyVault.withdrawToken(address(token), withdrawAmount);
+        
+        assertEq(strategyVault.tokenBalance(address(token)), vaultBalanceBefore - withdrawAmount);
+        assertEq(token.balanceOf(address(this)), userBalanceBefore + withdrawAmount);
+    }
+
+    function test_withdrawToken_reverts_when_not_owner() public {
+        uint256 depositAmount = 100 ether;
+        
+        token.approve(address(strategyVault), depositAmount);
+        strategyVault.depositToken(address(token), depositAmount);
+        
+        address nonOwner = address(0x1234);
+        
+        vm.prank(nonOwner);
+        vm.expectRevert("Not owner");
+        strategyVault.withdrawToken(address(token), 50 ether);
+    }
+
+    function test_withdrawToken_reverts_when_invalid_token() public {
+        vm.expectRevert("Invalid token");
+        strategyVault.withdrawToken(address(0), 100 ether);
+    }
+
+    function test_withdrawToken_reverts_when_invalid_amount() public {
+        vm.expectRevert("Invalid amount");
+        strategyVault.withdrawToken(address(token), 0);
+    }
+
+    function test_withdrawToken_reverts_when_insufficient_balance() public {
+        uint256 depositAmount = 50 ether;
+        
+        token.approve(address(strategyVault), depositAmount);
+        strategyVault.depositToken(address(token), depositAmount);
+        
+        vm.expectRevert();
+        strategyVault.withdrawToken(address(token), 100 ether);
+    }
+
+    function test_tokenBalance_returns_correct_balance() public {
+        assertEq(strategyVault.tokenBalance(address(token)), 0);
+        
+        uint256 depositAmount = 100 ether;
+        token.approve(address(strategyVault), depositAmount);
+        strategyVault.depositToken(address(token), depositAmount);
+        
+        assertEq(strategyVault.tokenBalance(address(token)), depositAmount);
     }
 
     receive() external payable {}
