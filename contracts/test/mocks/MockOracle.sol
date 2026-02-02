@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import { AggregatorV3Interface } from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
+import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
 
 contract MockOracle is AggregatorV3Interface {
     int256 public answer;
@@ -25,18 +25,7 @@ contract MockOracle is AggregatorV3Interface {
         }
     }
 
-    function latestRoundData()
-        external
-        view
-        override
-        returns (
-            uint80,
-            int256,
-            uint256,
-            uint256,
-            uint80
-        )
-    {
+    function latestRoundData() external view override returns (uint80, int256, uint256, uint256, uint80) {
         return (0, answer, 0, updatedAtTimestamp, 0);
     }
 
@@ -54,13 +43,7 @@ contract MockOracle is AggregatorV3Interface {
         external
         view
         override
-        returns (
-            uint80,
-            int256,
-            uint256,
-            uint256,
-            uint80
-        )
+        returns (uint80, int256, uint256, uint256, uint80)
     {
         return (0, answer, 0, updatedAtTimestamp, 0);
     }

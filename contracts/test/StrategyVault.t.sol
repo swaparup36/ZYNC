@@ -1147,8 +1147,7 @@ contract StrategyVaultTest is Test {
 
         target.setRevert(true);
         for (uint8 i = 0; i < 3; i++) {
-            try strategyVault.executeStrategy(strategyId) {}
-                catch {}
+            try strategyVault.executeStrategy(strategyId) {} catch {}
         }
 
         vm.expectRevert("Strategy paused");
@@ -1407,14 +1406,14 @@ contract StrategyVaultTest is Test {
 
     function test_depositToken_succeeds() public {
         uint256 depositAmount = 100 ether;
-        
+
         token.approve(address(strategyVault), depositAmount);
-        
+
         uint256 vaultBalanceBefore = strategyVault.tokenBalance(address(token));
         uint256 userBalanceBefore = token.balanceOf(address(this));
-        
+
         strategyVault.depositToken(address(token), depositAmount);
-        
+
         assertEq(strategyVault.tokenBalance(address(token)), vaultBalanceBefore + depositAmount);
         assertEq(token.balanceOf(address(this)), userBalanceBefore - depositAmount);
     }
@@ -1422,12 +1421,12 @@ contract StrategyVaultTest is Test {
     function test_depositToken_reverts_when_not_owner() public {
         uint256 depositAmount = 100 ether;
         address nonOwner = address(0x1234);
-        
+
         token.mint(nonOwner, depositAmount);
-        
+
         vm.startPrank(nonOwner);
         token.approve(address(strategyVault), depositAmount);
-        
+
         vm.expectRevert("Not owner");
         strategyVault.depositToken(address(token), depositAmount);
         vm.stopPrank();
@@ -1446,27 +1445,27 @@ contract StrategyVaultTest is Test {
     function test_withdrawToken_succeeds() public {
         uint256 depositAmount = 100 ether;
         uint256 withdrawAmount = 50 ether;
-        
+
         token.approve(address(strategyVault), depositAmount);
         strategyVault.depositToken(address(token), depositAmount);
-        
+
         uint256 vaultBalanceBefore = strategyVault.tokenBalance(address(token));
         uint256 userBalanceBefore = token.balanceOf(address(this));
-        
+
         strategyVault.withdrawToken(address(token), withdrawAmount);
-        
+
         assertEq(strategyVault.tokenBalance(address(token)), vaultBalanceBefore - withdrawAmount);
         assertEq(token.balanceOf(address(this)), userBalanceBefore + withdrawAmount);
     }
 
     function test_withdrawToken_reverts_when_not_owner() public {
         uint256 depositAmount = 100 ether;
-        
+
         token.approve(address(strategyVault), depositAmount);
         strategyVault.depositToken(address(token), depositAmount);
-        
+
         address nonOwner = address(0x1234);
-        
+
         vm.prank(nonOwner);
         vm.expectRevert("Not owner");
         strategyVault.withdrawToken(address(token), 50 ether);
@@ -1484,21 +1483,21 @@ contract StrategyVaultTest is Test {
 
     function test_withdrawToken_reverts_when_insufficient_balance() public {
         uint256 depositAmount = 50 ether;
-        
+
         token.approve(address(strategyVault), depositAmount);
         strategyVault.depositToken(address(token), depositAmount);
-        
+
         vm.expectRevert();
         strategyVault.withdrawToken(address(token), 100 ether);
     }
 
     function test_tokenBalance_returns_correct_balance() public {
         assertEq(strategyVault.tokenBalance(address(token)), 0);
-        
+
         uint256 depositAmount = 100 ether;
         token.approve(address(strategyVault), depositAmount);
         strategyVault.depositToken(address(token), depositAmount);
-        
+
         assertEq(strategyVault.tokenBalance(address(token)), depositAmount);
     }
 

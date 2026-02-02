@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import { AggregatorV3Interface } from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
-import { SafeERC20 } from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
-import { IERC20 } from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
+import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
+import {SafeERC20} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
+import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 
 using SafeERC20 for IERC20;
 
@@ -127,13 +127,7 @@ contract StrategyVault {
     function _readOracle(address oracle) internal view returns (uint256) {
         AggregatorV3Interface feed = AggregatorV3Interface(oracle);
 
-        (
-            ,
-            int256 answer,
-            ,
-            uint256 updatedAt,
-            
-        ) = feed.latestRoundData();
+        (, int256 answer,, uint256 updatedAt,) = feed.latestRoundData();
 
         require(answer > 0, "Invalid oracle answer");
         require(updatedAt != 0, "Stale oracle data");
@@ -180,7 +174,7 @@ contract StrategyVault {
         assembly {
             let dataSlot := data.slot
         }
-    
+
         bytes memory dataMem = data;
         assembly {
             amount := mload(add(add(dataMem, 0x20), offset))
@@ -309,7 +303,7 @@ contract StrategyVault {
         emit StrategyExecuted(strategyId);
     }
 
-    function depositETH() external payable onlyOwner{
+    function depositETH() external payable onlyOwner {
         require(msg.value > 0, "No ETH sent");
         emit ETHDeposited(msg.sender, msg.value);
     }
@@ -334,21 +328,14 @@ contract StrategyVault {
         require(token != address(0), "Invalid token");
         require(amount > 0, "Invalid amount");
 
-        IERC20(token).safeTransferFrom(
-            msg.sender,
-            address(this),
-            amount
-        );
+        IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
     }
 
     function withdrawToken(address token, uint256 amount) external onlyOwner {
         require(token != address(0), "Invalid token");
         require(amount > 0, "Invalid amount");
 
-        IERC20(token).safeTransfer(
-            msg.sender,
-            amount
-        );
+        IERC20(token).safeTransfer(msg.sender, amount);
     }
 
     function tokenBalance(address token) external view returns (uint256) {
