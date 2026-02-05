@@ -5,9 +5,9 @@ import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/shared/interf
 import {SafeERC20} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 
-using SafeERC20 for IERC20;
-
 contract StrategyVault {
+    using SafeERC20 for IERC20;
+
     address public immutable owner;
     Strategy[] strategies;
 
@@ -36,6 +36,7 @@ contract StrategyVault {
         AmountSource amountSource;
         uint256 value; // ETH to send when vault funds payable actions
         bytes data;
+        Allowance[] allowances;
     }
 
     enum Operator {
@@ -48,6 +49,12 @@ contract StrategyVault {
         CALLDATA, // amount comes from calldata
         MSG_VALUE, // amount comes from msg.value
         NONE // no amount involved
+    }
+
+    struct Allowance {
+        address token; // ERC20 token
+        address spender; // contract that pulls tokens
+        uint256 amount; // max allowance
     }
 
     mapping(address => mapping(bytes4 => bool)) allowedActions;
@@ -96,6 +103,8 @@ contract StrategyVault {
         require(expiry > block.timestamp, "Expiry must be in the future");
         require(conditions.length > 0, "No conditions");
         require(maxAmount > 0, "Invalid maxAmount");
+        require(action.target != address(0), "Invalid action target");
+        require(action.selector != bytes4(0), "Invalid action selector");
 
         strategies.push();
         uint256 strategyId = strategies.length - 1;
@@ -105,12 +114,30 @@ contract StrategyVault {
             strategy.conditions.push(conditions[i]);
         }
 
-        strategy.action = action;
+        Action storage a = strategy.action;
+
+        a.target = action.target;
+        a.selector = action.selector;
+        a.amountIndex = action.amountIndex;
+        a.isPayable = action.isPayable;
+        a.amountSource = action.amountSource;
+        a.value = action.value;
+        a.data = action.data;
 
         if (action.amountSource == AmountSource.MSG_VALUE) {
-            // Allow value to be 0 or greater - will be validated at execution time
+            require(action.isPayable, "Action must be payable");
         } else {
-            require(action.value == 0, "ETH value reserved for payable actions");
+            require(action.value == 0, "ETH value only for payable actions");
+        }
+
+        for (uint256 i = 0; i < action.allowances.length; i++) {
+            Allowance calldata al = action.allowances[i];
+
+            require(al.token != address(0), "Invalid allowance token");
+            require(al.spender != address(0), "Invalid allowance spender");
+            require(al.amount > 0, "Invalid allowance amount");
+
+            a.allowances.push(al);
         }
 
         strategy.maxAmount = maxAmount;
@@ -123,6 +150,18 @@ contract StrategyVault {
         emit StrategyCreated(strategyId);
         return strategyId;
     }
+
+    function _ensureAllowances(Action storage action) internal {
+        for (uint256 i = 0; i < action.allowances.length; i++) {
+            Allowance storage al = action.allowances[i];
+
+            uint256 current = IERC20(al.token).allowance(address(this), al.spender);
+            if (current < al.amount) {
+                IERC20(al.token).forceApprove(al.spender, al.amount);
+            }
+        }
+    }
+
 
     function _readOracle(address oracle) internal view returns (uint256) {
         AggregatorV3Interface feed = AggregatorV3Interface(oracle);
@@ -167,33 +206,29 @@ contract StrategyVault {
         }
     }
 
-    function _extractAmountFromStorage(bytes storage data, uint8 amountIndex) internal view returns (uint256 amount) {
+    function _extractAmountFromMemory(bytes memory data, uint8 amountIndex)
+        internal
+        pure
+        returns (uint256 amount)
+    {
         uint256 offset = 4 + uint256(amountIndex) * 32;
         require(data.length >= offset + 32, "Arg out of bounds");
 
         assembly {
-            let dataSlot := data.slot
-        }
-
-        bytes memory dataMem = data;
-        assembly {
-            amount := mload(add(add(dataMem, 0x20), offset))
+            amount := mload(add(add(data, 32), offset))
         }
     }
 
-    function canExecute(uint256 strategyId) public view returns (bool) {
-        if (strategyId >= strategies.length) {
+    function canExecute(uint256 strategyId) external view returns (bool) {
+        try this.simulateStrategy(strategyId) {
+            return true;
+        } catch {
             return false;
         }
+    }
 
-        Strategy storage strategy = strategies[strategyId];
-
-        if (strategy.paused) return false;
-        if (block.timestamp >= strategy.expiry) return false;
-        if (strategy.lastExecution > 0 && block.timestamp < strategy.lastExecution + strategy.cooldown) return false;
-        if (strategy.failureCount >= MAX_FAILURES) return false;
-
-        return _checkConditions(strategyId);
+    function isActionAllowed(address target, bytes4 selector) external view returns (bool) {
+        return allowedActions[target][selector];
     }
 
     function allowAction(address target, bytes4 selector) external onlyOwner {
@@ -219,8 +254,7 @@ contract StrategyVault {
         strategies[strategyId].paused = true;
     }
 
-    function executeStrategy(uint256 strategyId) external payable nonReentrant {
-        require(executionBalance >= executionFee, "Insufficient execution balance");
+    function _validateStrategy(uint256 strategyId) internal view {
         require(strategyId < strategies.length, "Invalid strategy");
 
         Strategy storage strategy = strategies[strategyId];
@@ -229,70 +263,82 @@ contract StrategyVault {
         require(!strategy.paused, "Strategy paused");
         require(block.timestamp < strategy.expiry, "Strategy expired");
         require(
-            strategy.lastExecution == 0 || block.timestamp >= strategy.lastExecution + strategy.cooldown,
+            strategy.lastExecution == 0 ||
+            block.timestamp >= strategy.lastExecution + strategy.cooldown,
             "Cooldown active"
         );
         require(strategy.failureCount < MAX_FAILURES, "Strategy disabled");
 
         require(_checkConditions(strategyId), "Conditions not met");
-
         require(action.data.length >= 4, "Invalid calldata");
 
-        bytes4 selector;
         bytes memory actionData = action.data;
+
+        bytes4 selector;
         assembly {
             selector := mload(add(actionData, 32))
         }
 
-        require(selector == strategy.action.selector, "Selector mismatch");
-        require(allowedActions[strategy.action.target][strategy.action.selector], "Action not allowed");
+        require(selector == action.selector, "Selector mismatch");
+        require(allowedActions[action.target][action.selector], "Action not allowed");
 
-        uint256 amount = 0;
-        uint256 callValue = 0;
-
-        if (strategy.action.amountSource == AmountSource.CALLDATA) {
-            // ERC20 style or calldata-based amount
-            require(msg.value == 0, "ETH not allowed for calldata-based action");
-            amount = _extractAmountFromStorage(action.data, strategy.action.amountIndex);
+        if (action.amountSource == AmountSource.CALLDATA) {
+            uint256 amount =
+                _extractAmountFromMemory(actionData, action.amountIndex);
             require(amount <= strategy.maxAmount, "Amount exceeds maxAmount");
-            callValue = 0;
-        } else if (strategy.action.amountSource == AmountSource.MSG_VALUE) {
-            // Payable ETH-based action
-            require(strategy.action.isPayable, "Action not payable");
-            require(msg.value == 0, "Executor should not send ETH");
+        }
+        else if (action.amountSource == AmountSource.MSG_VALUE) {
+            require(action.isPayable, "Action not payable");
 
-            amount = strategy.action.value;
+            uint256 amount = action.value;
             require(amount > 0, "ETH required");
             require(amount <= strategy.maxAmount, "ETH exceeds maxAmount");
 
             uint256 vaultBalance = address(this).balance;
             require(vaultBalance >= executionBalance, "Vault undercollateralized");
             require(vaultBalance - executionBalance >= amount, "Insufficient vault ETH");
+        }
+        else {
+            // AmountSource.NONE -> nothing to validate
+        }
+    }
 
-            callValue = amount;
-        } else if (strategy.action.amountSource == AmountSource.NONE) {
-            // No value transfer
-            require(msg.value == 0, "ETH not allowed");
-            callValue = 0;
+    function simulateStrategy(uint256 strategyId) external view {
+        require(executionBalance >= executionFee, "Insufficient execution balance");
+        _validateStrategy(strategyId);
+    }
+
+    function executeStrategy(uint256 strategyId) external payable nonReentrant {
+        require(executionBalance >= executionFee, "Insufficient execution balance");
+
+        _validateStrategy(strategyId);
+
+        Strategy storage strategy = strategies[strategyId];
+        Action storage action = strategy.action;
+
+        uint256 callValue = 0;
+
+        if (action.amountSource == AmountSource.MSG_VALUE) {
+            callValue = action.value;
         }
 
-        strategy.lastExecution = block.timestamp;
+        _ensureAllowances(action);
 
-        (bool success,) = strategy.action.target.call{value: callValue}(action.data);
+        (bool success, bytes memory returndata) = action.target.call{value: callValue}(action.data);
 
         if (!success) {
-            strategy.failureCount += 1;
-
-            if (strategy.failureCount >= MAX_FAILURES) {
-                strategy.paused = true;
+            if (returndata.length > 0) {
+                assembly {
+                    revert(add(returndata, 32), mload(returndata))
+                }
             }
-
-            emit StrategyExecutionFailed(strategyId);
-            return;
+            revert("ACTION_CALL_FAILED");
         }
 
+
+        strategy.lastExecution = block.timestamp;
         executionBalance -= executionFee;
-        // Pay the half execution fee to the feeRecipient and half to msg.sender
+
         (bool ok,) = payable(feeRecipient).call{value: executionFee / 2}("");
         require(ok, "Fee transfer failed");
 
@@ -344,5 +390,18 @@ contract StrategyVault {
 
     receive() external payable {
         // Allow receiving ETH
+    }
+
+    function getStrategies() external view returns (Strategy[] memory) {
+        return strategies;
+    }
+
+    function getStrategieCount() external view returns (uint256) {
+        return strategies.length;
+    }
+
+    function getStrategy(uint256 strategyId) external view returns (Strategy memory) {
+        require(strategyId < strategies.length, "Invalid strategy");
+        return strategies[strategyId];
     }
 }

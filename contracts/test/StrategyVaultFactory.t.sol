@@ -106,6 +106,22 @@ contract StrategyVaultFactoryTest is Test {
         assertEq(vault.owner(), user);
     }
 
+    function testVault_starts_with_zero_strategies() public {
+        vm.prank(user);
+        address vaultAddr = factory.createVault();
+
+        StrategyVault vault = StrategyVault(payable(vaultAddr));
+        assertEq(vault.getStrategieCount(), 0);
+    }
+
+    function testVault_has_default_execution_fee() public {
+        vm.prank(user);
+        address vaultAddr = factory.createVault();
+
+        StrategyVault vault = StrategyVault(payable(vaultAddr));
+        assertEq(vault.executionFee(), 0.0003 ether);
+    }
+
     function testVaultCreated_event_emitted() public {
         vm.prank(user);
 

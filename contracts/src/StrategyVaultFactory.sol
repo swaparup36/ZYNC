@@ -5,6 +5,7 @@ import {StrategyVault} from "./StrategyVault.sol";
 
 contract StrategyVaultFactory {
     mapping(address => address[]) public userVaults;
+    address[] public allVaults;
     mapping(address => bool) public isVault;
     address public protocolTreasury;
     address public protocolOwner;
@@ -26,6 +27,7 @@ contract StrategyVaultFactory {
         vault = address(vaultInstance);
         userVaults[msg.sender].push(vault);
         isVault[vault] = true;
+        allVaults.push(vault);
         emit VaultCreated(msg.sender, vault);
         return vault;
     }
@@ -36,5 +38,13 @@ contract StrategyVaultFactory {
 
     function updateProtocolTreasury(address _treasury) external onlyOwner {
         protocolTreasury = _treasury;
+    }
+
+    function updateProtocolOwner(address _owner) external onlyOwner {
+        protocolOwner = _owner;
+    }
+
+    function getAllVaults() external view returns (address[] memory) {
+        return allVaults;
     }
 }

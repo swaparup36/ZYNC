@@ -39,6 +39,7 @@ contract SmartVaultScript is Script {
         StrategyVault.Condition[] memory conditions = new StrategyVault.Condition[](1);
         conditions[0] =
             StrategyVault.Condition({oracle: address(oracle), operator: StrategyVault.Operator.LT, value: 200});
+        StrategyVault.Allowance[] memory allowances = new StrategyVault.Allowance[](0);
         StrategyVault.Action memory action = StrategyVault.Action({
             target: address(target),
             selector: MockTarget.doThing.selector,
@@ -46,7 +47,8 @@ contract SmartVaultScript is Script {
             isPayable: false,
             amountSource: StrategyVault.AmountSource.CALLDATA,
             value: 0,
-            data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether)
+            data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether),
+            allowances: allowances
         });
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
 
