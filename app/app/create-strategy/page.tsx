@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, ArrowRight } from 'lucide-react'
@@ -154,7 +154,7 @@ async function encodeFunctionDataFromAction(action: any): Promise<`0x${string}`>
   }
 }
 
-export default function CreateAutomationPage() {
+function CreateAutomationPage() {
   const [triggerSections, setTriggerSections] = useState<TriggerSection[]>(() => [
     { id: generateTriggerId() },
   ])
@@ -741,4 +741,12 @@ export default function CreateAutomationPage() {
       />
     </div>
   )
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <CreateAutomationPage />
+    </Suspense>
+  );
 }

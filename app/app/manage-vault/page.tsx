@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useAccount } from "wagmi";
 import {
@@ -86,7 +86,7 @@ interface Strategy {
 
 type DepositType = "ETH" | "ERC20";
 
-export default function ManageVaultPage() {
+function ManageVaultContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const vaultAddress = searchParams.get("vault") as `0x${string}` | null;
@@ -1568,5 +1568,17 @@ export default function ManageVaultPage() {
       </Dialog>
       </div>
     </>
+  );
+}
+
+export default function ManageVaultPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    }>
+      <ManageVaultContent />
+    </Suspense>
   );
 }
