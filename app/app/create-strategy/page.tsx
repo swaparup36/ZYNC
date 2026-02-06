@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useState } from 'react'
+import { Suspense, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, ArrowRight } from 'lucide-react'
@@ -8,6 +8,8 @@ import { TriggerBuilder, TriggerBuilderValue } from '@/components/trigger-builde
 import { ActionBuilder } from '@/components/action-builder-zapier'
 import { SafetyControls } from '@/components/safety-controls'
 import { DepositModal } from '@/components/deposit-modal'
+import { ActionModeToggle, type ActionMode } from '@/components/create-strategy/action-mode-toggle'
+import { UniswapSwapForm } from '@/components/create-strategy/uniswap-swap-form'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { StrategyAction, StrategyCondition, StrategyOperator, StrategyAmountSource, Allowance } from '@/types/types'
 import { 
@@ -26,6 +28,7 @@ import {
 import { SEPOLIA_ORACLE_SOURCES } from '@/lib/oracles'
 import { useAccount } from 'wagmi'
 import { encodeFunctionData } from 'viem'
+import { getTokenByAddress, formatTokenAmount, UNIVERSAL_ROUTER_ADDRESS } from '@/lib/actions/uniswap'
 
 type TriggerSection = {
   id: string
@@ -162,10 +165,33 @@ function CreateAutomationPage() {
   const [safety, setSafety] = useState<any>(null)
   const [showDepositModal, setShowDepositModal] = useState(false)
   const [isCreating, setIsCreating] = useState(false)
+  
+  // New state for action mode
+  const [actionMode, setActionMode] = useState<ActionMode>('custom')
 
   const vaultAddress = useSearchParams().get('vault')
   const router = useRouter()
   const { address: userAddress } = useAccount()
+
+  // Handler for action mode change - resets action state
+  const handleActionModeChange = useCallback((mode: ActionMode) => {
+    setActionMode(mode)
+    setAction(null) // Reset action when switching modes
+  }, [])
+
+  // Handler for custom action changes
+  const handleCustomActionChange = useCallback((newAction: StrategyAction | null) => {
+    if (actionMode === 'custom') {
+      setAction(newAction)
+    }
+  }, [actionMode])
+
+  // Handler for prebuilt action changes
+  const handlePrebuiltActionChange = useCallback((newAction: StrategyAction | null) => {
+    if (actionMode === 'prebuilt') {
+      setAction(newAction)
+    }
+  }, [actionMode])
 
   const configuredTriggers = triggerSections
     .map((section) => section.data)
@@ -192,6 +218,8 @@ function CreateAutomationPage() {
     setTriggerSections((prev) => [...prev, { id: generateTriggerId() }])
   }
 
+
+
   async function handleCreateAutomationStrategy() {
     if (!vaultAddress) {
       alert('Vault address is missing')
@@ -213,8 +241,16 @@ function CreateAutomationPage() {
     try {
       const depositType = (action as any).requiresDeposit
       const depositAmount = BigInt((action as any).depositAmount || '0')
+      
+      console.log('handleCreateAutomationStrategy:', {
+        actionMode,
+        depositType,
+        depositAmount: depositAmount.toString(),
+        depositTokenAddress: (action as any).depositTokenAddress,
+      })
 
-      if (depositType === 'ERC20') {
+      // For prebuilt or custom ERC20 actions, check if vault has enough tokens
+      if (depositType === 'ERC20' && depositAmount > BigInt(0)) {
         const tokenAddress = (action as any).depositTokenAddress as `0x${string}`
         
         try {
@@ -263,6 +299,12 @@ function CreateAutomationPage() {
     const depositType = (action as any).requiresDeposit
     const depositAmount = BigInt((action as any).depositAmount || '0')
 
+    console.log('handleDeposit called:', {
+      depositType,
+      depositAmount: depositAmount.toString(),
+      tokenAddress: (action as any).depositTokenAddress,
+    })
+
     if (depositType === 'ERC20') {
       const tokenAddress = (action as any).depositTokenAddress as `0x${string}`
       
@@ -270,20 +312,32 @@ function CreateAutomationPage() {
         throw new Error('Invalid ERC20 token address. Please provide a valid token address.');
       }
       
+      console.log('Checking ERC20 allowance before deposit')
+      
       const allowance = await getERC20Allowance(
         tokenAddress,
         userAddress as `0x${string}`,
         vaultAddress as `0x${string}`
       )
+      
+      console.log('Current allowance:', allowance.toString(), 'required:', depositAmount.toString())
 
       if (allowance < depositAmount) {
+        console.log('Approving tokens for vault...')
         const approveHash = await approveERC20(
           tokenAddress,
           vaultAddress as `0x${string}`,
           depositAmount
         )
         await waitForTx(approveHash)
+        console.log('Token approval confirmed')
       }
+
+      console.log('Depositing tokens to vault:', {
+        vault: vaultAddress,
+        token: tokenAddress,
+        amount: depositAmount.toString(),
+      })
 
       const depositHash = await depositTokenOnVault(
         vaultAddress as `0x${string}`,
@@ -291,14 +345,21 @@ function CreateAutomationPage() {
         depositAmount
       )
       await waitForTx(depositHash)
+      console.log('Token deposit confirmed')
     } else if (depositType === 'ETH') {
+      console.log('Depositing ETH to vault:', {
+        vault: vaultAddress,
+        amount: depositAmount.toString(),
+      })
       const depositHash = await depositETHOnVault(
         vaultAddress as `0x${string}`,
         depositAmount
       )
       await waitForTx(depositHash)
+      console.log('ETH deposit confirmed')
     }
 
+    console.log('Deposit complete, proceeding to strategy creation')
     setShowDepositModal(false)
     await createStrategyTransaction()
   }
@@ -596,8 +657,19 @@ function CreateAutomationPage() {
             </div>
           </div>
 
-          {/* Action Card */}
-          <ActionBuilder onChange={setAction} />
+          {/* Action Mode Toggle and Action Card */}
+          <div className="w-full space-y-4">
+            <ActionModeToggle value={actionMode} onChange={handleActionModeChange} />
+            
+            {actionMode === 'custom' ? (
+              <ActionBuilder onChange={handleCustomActionChange} />
+            ) : (
+              <UniswapSwapForm 
+                vaultAddress={vaultAddress as `0x${string}` | null} 
+                onChange={handlePrebuiltActionChange} 
+              />
+            )}
+          </div>
 
           {/* Safety Controls - below the flow */}
           <div className="w-full mt-12">
@@ -641,25 +713,76 @@ function CreateAutomationPage() {
                 </section>
 
                 <section>
-                  <p className="text-[11px] font-bold text-accent tracking-[0.3em] mb-2">ACTION</p>
+                  <p className="text-[11px] font-bold text-accent tracking-[0.3em] mb-2">
+                    ACTION {actionMode === 'prebuilt' && <span className="text-muted-foreground">(UNISWAP SWAP)</span>}
+                  </p>
                   {action ? (
                     <div className="text-sm text-muted-foreground space-y-1">
-                      <p>
-                        <span className="text-accent font-semibold">Target:</span> {action.target || 'Not set'}
-                      </p>
-                      <p>
-                        <span className="text-accent font-semibold">Selector:</span> {action.selector || 'Not set'}
-                      </p>
-                      <p>
-                        <span className="text-accent font-semibold">Amount Index:</span>{' '}
-                        {typeof action.amountIndex === 'number' ? action.amountIndex : 'Not set'}
-                      </p>
-                      <p>
-                        <span className="text-accent font-semibold">Funding:</span> {action.isPayable ? 'Payable' : 'Non-payable'}
-                      </p>
-                      <p>
-                        <span className="text-accent font-semibold">Amount Source:</span> {action.amountSource ?? 'Not set'}
-                      </p>
+                      {actionMode === 'prebuilt' && action.functionArgs ? (
+                        // Prebuilt action summary
+                        <>
+                          <div className="bg-accent/5 border border-accent/20 rounded-lg p-3 space-y-2">
+                            <p className="text-xs font-bold text-accent tracking-wider mb-2">SWAP DETAILS</p>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <span className="text-[10px] text-muted-foreground">From</span>
+                                <p className="font-mono text-foreground">
+                                  {getTokenByAddress(action.functionArgs.tokenIn as `0x${string}`)?.symbol || 
+                                    `${action.functionArgs.tokenIn?.slice(0, 8)}...`}
+                                </p>
+                              </div>
+                              <div>
+                                <span className="text-[10px] text-muted-foreground">To</span>
+                                <p className="font-mono text-foreground">
+                                  {getTokenByAddress(action.functionArgs.tokenOut as `0x${string}`)?.symbol || 
+                                    `${action.functionArgs.tokenOut?.slice(0, 8)}...`}
+                                </p>
+                              </div>
+                              <div>
+                                <span className="text-[10px] text-muted-foreground">Amount</span>
+                                <p className="font-mono text-foreground">
+                                  {action.functionArgs.amountIn ? 
+                                    formatTokenAmount(
+                                      BigInt(action.functionArgs.amountIn), 
+                                      getTokenByAddress(action.functionArgs.tokenIn as `0x${string}`)?.decimals || 18
+                                    ) : '—'}
+                                </p>
+                              </div>
+                              <div>
+                                <span className="text-[10px] text-muted-foreground">Slippage</span>
+                                <p className="font-mono text-foreground">
+                                  {action.functionArgs.slippageBps ? 
+                                    `${(parseInt(action.functionArgs.slippageBps) / 100).toFixed(2)}%` : '—'}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                          <p className="text-xs mt-2">
+                            <span className="text-accent font-semibold">Router:</span>{' '}
+                            <span className="font-mono">{UNIVERSAL_ROUTER_ADDRESS.slice(0, 10)}...{UNIVERSAL_ROUTER_ADDRESS.slice(-6)}</span>
+                          </p>
+                        </>
+                      ) : (
+                        // Custom action summary
+                        <>
+                          <p>
+                            <span className="text-accent font-semibold">Target:</span> {action.target || 'Not set'}
+                          </p>
+                          <p>
+                            <span className="text-accent font-semibold">Selector:</span> {action.selector || 'Not set'}
+                          </p>
+                          <p>
+                            <span className="text-accent font-semibold">Amount Index:</span>{' '}
+                            {typeof action.amountIndex === 'number' ? action.amountIndex : 'Not set'}
+                          </p>
+                          <p>
+                            <span className="text-accent font-semibold">Funding:</span> {action.isPayable ? 'Payable' : 'Non-payable'}
+                          </p>
+                          <p>
+                            <span className="text-accent font-semibold">Amount Source:</span> {action.amountSource ?? 'Not set'}
+                          </p>
+                        </>
+                      )}
                       {(action as any).allowances && (action as any).allowances.length > 0 && (
                         <div className="mt-2 pt-2 border-t border-accent/20">
                           <p className="text-accent font-semibold mb-1">Token Allowances:</p>
@@ -669,7 +792,7 @@ function CreateAutomationPage() {
                                 <span className="text-accent">#{idx + 1}</span>
                                 <span className="block">Token: <span className="font-mono">{a.token?.slice(0, 10)}...{a.token?.slice(-6)}</span></span>
                                 <span className="block">Spender: <span className="font-mono">{a.spender?.slice(0, 10)}...{a.spender?.slice(-6)}</span></span>
-                                <span className="block">Amount: <span className="font-mono">{a.amount?.length > 20 ? `${a.amount.slice(0, 10)}...` : a.amount}</span></span>
+                                <span className="block">Amount: <span className="font-mono">{typeof a.amount === 'bigint' ? a.amount.toString() : (a.amount?.length > 20 ? `${a.amount.slice(0, 10)}...` : a.amount)}</span></span>
                               </li>
                             ))}
                           </ul>
@@ -739,6 +862,8 @@ function CreateAutomationPage() {
         amount={(action as any)?.depositAmount || '0'}
         onDeposit={handleDeposit}
       />
+
+
     </div>
   )
 }

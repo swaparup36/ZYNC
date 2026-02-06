@@ -16,7 +16,7 @@ export async function waitForTx(hash: `0x${string}`) {
 }
 
 export async function decodeEventLogAndReturn(event: Log<bigint, number, false>) {
-  // Try decoding with vault ABI first (for StrategyCreated event)
+  // Try decoding with vault ABI first
   try {
     const decoded = decodeEventLog({
       abi: strategyVaultABI,
@@ -25,7 +25,6 @@ export async function decodeEventLogAndReturn(event: Log<bigint, number, false>)
     });
     return decoded;
   } catch (error) {
-    // If that fails, try with factory ABI (for VaultCreated event)
     const decoded = decodeEventLog({
       abi: strategyVaultFactoryABI,
       data: event.data,
@@ -65,7 +64,7 @@ export async function getERC20Allowance(tokenAddress: `0x${string}`, owner: `0x$
       return BigInt(allowance as bigint);
     } catch (error: any) {
       console.error('Error checking ERC20 allowance:', error);
-      // If the contract doesn't support allowance, treat as 0
+  
       if (error.message?.includes('returned no data') || error.message?.includes('does not have the function')) {
         throw new Error(
           `The address ${tokenAddress} is not a valid ERC20 token contract. ` +
@@ -111,7 +110,7 @@ export async function createStrategy(
       abi: strategyVaultABI,
       functionName: 'createStrategy',
       args: [conditions, action, maxAmount, cooldown, expiry],
-      gas: 5000000n, // Set reasonable gas limit (5M gas)
+      gas: 5000000n,
     });
 
     return hash;
@@ -232,7 +231,7 @@ export async function depositTokenOnVault(vaultAddress: `0x${string}`, tokenAddr
       abi: strategyVaultABI,
       functionName: 'depositToken',
       args: [tokenAddress, amount],
-      gas: 500000n, // Set reasonable gas limit for token deposit
+      gas: 500000n,
     });
 
     return hash;
@@ -317,14 +316,8 @@ export async function getVaultETHBalance(vaultAddress: `0x${string}`) {
     return Totalbalance.value;
 }
 
-/**
- * Verify if an address is a valid ERC20 token contract by trying to call a view function
- * Returns true if the token contract exists and responds, false otherwise
- */
 export async function isValidERC20Token(tokenAddress: `0x${string}`): Promise<boolean> {
   try {
-    // Try to call a simple view function like symbol() or decimals()
-    // If the contract exists and is an ERC20, this should succeed
     await readContract(config, {
       address: tokenAddress,
       abi: ERC20_ABI,
@@ -338,9 +331,6 @@ export async function isValidERC20Token(tokenAddress: `0x${string}`): Promise<bo
   }
 }
 
-/**
- * Get ERC20 token symbol
- */
 export async function getERC20Symbol(tokenAddress: `0x${string}`): Promise<string | null> {
   try {
     const symbol = await readContract(config, {
