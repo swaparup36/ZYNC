@@ -4,7 +4,7 @@ import { privateKeyToAccount } from "viem/accounts";
 import { logger } from "../utils/logger";
 import { sleepWithJitter } from "../utils/sleep";
 
-const FACTORY = "0xA22d214517f244FD93F36834eB85a8a15F1f8F92" as `0x${string}`;
+const FACTORY = "0x94F30F7e58acA006CCe492554F4444a7100Afb23" as `0x${string}`;
 const INTERVAL = 15_000;
 
 export async function startExecutor(privateKey: `0x${string}`) {

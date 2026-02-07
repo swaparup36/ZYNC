@@ -1,6 +1,6 @@
 {
   "name": "zync-executor",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A CLI tool to execute strategies on zync vaults",
   "scripts": {
     "build": "tsc",
