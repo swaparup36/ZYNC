@@ -16,7 +16,6 @@ export async function waitForTx(hash: `0x${string}`) {
 }
 
 export async function decodeEventLogAndReturn(event: Log<bigint, number, false>) {
-  // Try decoding with vault ABI first
   try {
     const decoded = decodeEventLog({
       abi: strategyVaultABI,
