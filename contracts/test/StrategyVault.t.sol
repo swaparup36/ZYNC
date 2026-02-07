@@ -447,8 +447,7 @@ contract StrategyVaultTest is Test {
 
         // Cause a failure
         target.setRevert(true);
-        try strategyVault.executeStrategy(strategyId) {}
-        catch {}
+        try strategyVault.executeStrategy(strategyId) {} catch {}
 
         // Execute successfully after previous failure
         target.setRevert(false);
@@ -485,8 +484,7 @@ contract StrategyVaultTest is Test {
         target.setRevert(true);
 
         // Cause a failure
-        try strategyVault.executeStrategy(strategyId) {}
-        catch {}
+        try strategyVault.executeStrategy(strategyId) {} catch {}
 
         // Strategy should still be executable
         bool canExecute = strategyVault.canExecute(strategyId);
@@ -519,8 +517,7 @@ contract StrategyVaultTest is Test {
         target.setRevert(true);
         // Try to execute multiple times (all will fail)
         for (uint8 i = 0; i < 4; i++) {
-            try strategyVault.executeStrategy(strategyId) {}
-            catch {}
+            try strategyVault.executeStrategy(strategyId) {} catch {}
         }
 
         // Strategy should still be executable since failures don't track

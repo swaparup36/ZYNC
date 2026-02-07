@@ -166,7 +166,6 @@ contract StrategyVault {
         }
     }
 
-
     function _readOracle(address oracle) internal view returns (uint256) {
         AggregatorV3Interface feed = AggregatorV3Interface(oracle);
 
@@ -210,11 +209,7 @@ contract StrategyVault {
         }
     }
 
-    function _extractAmountFromMemory(bytes memory data, uint8 amountIndex)
-        internal
-        pure
-        returns (uint256 amount)
-    {
+    function _extractAmountFromMemory(bytes memory data, uint8 amountIndex) internal pure returns (uint256 amount) {
         uint256 offset = 4 + uint256(amountIndex) * 32;
         require(data.length >= offset + 32, "Arg out of bounds");
 
@@ -267,8 +262,7 @@ contract StrategyVault {
         require(!strategy.paused, "Strategy paused");
         require(block.timestamp < strategy.expiry, "Strategy expired");
         require(
-            strategy.lastExecution == 0 ||
-            block.timestamp >= strategy.lastExecution + strategy.cooldown,
+            strategy.lastExecution == 0 || block.timestamp >= strategy.lastExecution + strategy.cooldown,
             "Cooldown active"
         );
         require(strategy.failureCount < MAX_FAILURES, "Strategy disabled");
@@ -287,11 +281,9 @@ contract StrategyVault {
         require(allowedActions[action.target][action.selector], "Action not allowed");
 
         if (action.amountSource == AmountSource.CALLDATA) {
-            uint256 amount =
-                _extractAmountFromMemory(actionData, action.amountIndex);
+            uint256 amount = _extractAmountFromMemory(actionData, action.amountIndex);
             require(amount <= strategy.maxAmount, "Amount exceeds maxAmount");
-        }
-        else if (action.amountSource == AmountSource.MSG_VALUE) {
+        } else if (action.amountSource == AmountSource.MSG_VALUE) {
             require(action.isPayable, "Action not payable");
 
             uint256 amount = action.value;
@@ -301,8 +293,7 @@ contract StrategyVault {
             uint256 vaultBalance = address(this).balance;
             require(vaultBalance >= executionBalance, "Vault undercollateralized");
             require(vaultBalance - executionBalance >= amount, "Insufficient vault ETH");
-        }
-        else {
+        } else {
             // AmountSource.NONE -> nothing to validate
         }
     }
@@ -340,7 +331,6 @@ contract StrategyVault {
             }
             revert("ACTION_CALL_FAILED");
         }
-
 
         strategy.lastExecution = block.timestamp;
         executionBalance -= executionFee;
