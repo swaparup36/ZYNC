@@ -52,12 +52,12 @@ contract SmartVaultScript is Script {
         });
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
 
-        // Recharge vault with execution balance -> fee is 0.0003 ether per execution
+        // Recharge vault with execution balance -> fee is 0.003 ether per execution
         strategyVault.recharge{value: 0.01 ether}();
 
-        // Execute strategy - execution fee (0.0003 ETH) will be split 50/50:
-        // - 0.00015 ETH to protocol treasury (feeRecipient)
-        // - 0.00015 ETH to executor (msg.sender)
+        // Execute strategy - execution fee (0.003 ETH) will be split 50/50:
+        // - 0.0015 ETH to protocol treasury (feeRecipient)
+        // - 0.0015 ETH to executor (msg.sender)
         strategyVault.executeStrategy(strategyId);
 
         vm.stopBroadcast();

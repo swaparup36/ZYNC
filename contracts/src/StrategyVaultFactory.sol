@@ -9,12 +9,14 @@ contract StrategyVaultFactory {
     mapping(address => bool) public isVault;
     address public protocolTreasury;
     address public protocolOwner;
+    uint256 public executionFee;
 
     event VaultCreated(address indexed user, address vault);
 
     constructor(address _treasury) {
         protocolTreasury = _treasury;
         protocolOwner = msg.sender;
+        executionFee = 0.003 ether;
     }
 
     modifier onlyOwner() {
@@ -38,6 +40,10 @@ contract StrategyVaultFactory {
 
     function updateProtocolTreasury(address _treasury) external onlyOwner {
         protocolTreasury = _treasury;
+    }
+
+    function updateExecutionFee(uint256 _executionFee) external onlyOwner {
+        executionFee = _executionFee;
     }
 
     function updateProtocolOwner(address _owner) external onlyOwner {

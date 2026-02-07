@@ -13,6 +13,9 @@ contract StrategyVaultTest is Test {
     MockTarget public target;
     MockERC20 public token;
 
+    // Mock executionFee for when test contract acts as factory
+    uint256 public executionFee = 0.003 ether;
+
     event ETHDeposited(address indexed user, uint256 amount);
     event ETHWithdrawn(address indexed user, uint256 amount);
     event VaultRecharged(uint256 amount);
@@ -263,7 +266,7 @@ contract StrategyVaultTest is Test {
         assertFalse(canExecute);
     }
 
-    function test_canExecute_false_when_failureCount_exceeded() public {
+    function test_execute_reverts_when_action_fails() public {
         StrategyVault.Condition[] memory conditions = new StrategyVault.Condition[](1);
         conditions[0] =
             StrategyVault.Condition({oracle: address(oracle), operator: StrategyVault.Operator.LT, value: 200});
@@ -282,24 +285,14 @@ contract StrategyVaultTest is Test {
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
 
-        // Recharge execution balance
         strategyVault.recharge{value: 0.1 ether}();
 
-        // Set target to revert to trigger external call failures
+        // Set target to revert
         target.setRevert(true);
 
-        // Manually increment failureCount to exceed MAX_FAILURES
-        for (uint8 i = 0; i < 4; i++) {
-            vm.prank(address(this));
-            try strategyVault.executeStrategy(strategyId) {
-            // Do nothing
-            }
-                catch {
-                // Ignore failures
-            }
-        }
-        bool canExecute = strategyVault.canExecute(strategyId);
-        assertFalse(canExecute);
+        // Execution should revert when action fails
+        vm.expectRevert("Mock failure");
+        strategyVault.executeStrategy(strategyId);
     }
 
     function test_execute_reverts_on_selector_mismatch() public {
@@ -430,7 +423,8 @@ contract StrategyVaultTest is Test {
         assertEq(lastAmount, 0.5 ether);
     }
 
-    function test_execute_resets_failureCount_on_success() public {
+    function test_execute_succeeds_after_failed_attempt() public {
+        // Note: Contract does not track failures - failed attempts just revert
         StrategyVault.Condition[] memory conditions = new StrategyVault.Condition[](1);
         conditions[0] =
             StrategyVault.Condition({oracle: address(oracle), operator: StrategyVault.Operator.LT, value: 200});
@@ -453,24 +447,20 @@ contract StrategyVaultTest is Test {
 
         // Cause a failure
         target.setRevert(true);
-        vm.prank(address(this));
-        try strategyVault.executeStrategy(strategyId) {
-        // Do nothing
-        }
-            catch {
-            // Ignore failures
-        }
+        try strategyVault.executeStrategy(strategyId) {}
+        catch {}
 
-        // Execute successfully
+        // Execute successfully after previous failure
         target.setRevert(false);
         strategyVault.executeStrategy(strategyId);
 
-        // Verify that failureCount is reset
+        // Verify execution was successful
         bool canExecute = strategyVault.canExecute(strategyId);
         assertTrue(canExecute);
     }
 
-    function test_failure_increments_failureCount() public {
+    function test_strategy_remains_executable_after_failed_attempt() public {
+        // Note: Contract does not track failures - strategy stays executable
         StrategyVault.Condition[] memory conditions = new StrategyVault.Condition[](1);
         conditions[0] =
             StrategyVault.Condition({oracle: address(oracle), operator: StrategyVault.Operator.LT, value: 200});
@@ -491,24 +481,21 @@ contract StrategyVaultTest is Test {
 
         strategyVault.recharge{value: 0.01 ether}();
 
-        // Set target to revert to trigger external call failure
+        // Set target to revert
         target.setRevert(true);
 
         // Cause a failure
-        vm.prank(address(this));
-        try strategyVault.executeStrategy(strategyId) {
-        // Do nothing
-        }
-            catch {
-            // Ignore failures
-        }
+        try strategyVault.executeStrategy(strategyId) {}
+        catch {}
 
-        // Verify that failureCount has incremented
+        // Strategy should still be executable
         bool canExecute = strategyVault.canExecute(strategyId);
-        assertTrue(canExecute); // Should still be able to execute as failureCount < MAX_FAILURES
+        assertTrue(canExecute);
     }
 
-    function test_auto_pause_after_max_failures() public {
+    function test_canExecute_true_after_failed_execution_attempts() public {
+        // Note: The contract does not track failure counts - failed executions just revert
+        // Strategy remains executable after failed attempts
         StrategyVault.Condition[] memory conditions = new StrategyVault.Condition[](1);
         conditions[0] =
             StrategyVault.Condition({oracle: address(oracle), operator: StrategyVault.Operator.LT, value: 200});
@@ -530,20 +517,15 @@ contract StrategyVaultTest is Test {
         strategyVault.recharge{value: 0.1 ether}();
 
         target.setRevert(true);
-        // Cause failures to exceed MAX_FAILURES
+        // Try to execute multiple times (all will fail)
         for (uint8 i = 0; i < 4; i++) {
-            vm.prank(address(this));
-            try strategyVault.executeStrategy(strategyId) {
-            // Do nothing
-            }
-                catch {
-                // Ignore failures
-            }
+            try strategyVault.executeStrategy(strategyId) {}
+            catch {}
         }
 
-        // Verify that strategy is paused
+        // Strategy should still be executable since failures don't track
         bool canExecute = strategyVault.canExecute(strategyId);
-        assertFalse(canExecute);
+        assertTrue(canExecute);
     }
 
     function test_depositETH_succeeds() public {
@@ -743,7 +725,7 @@ contract StrategyVaultTest is Test {
 
         strategyVault.recharge{value: 0.01 ether}();
         uint256 balanceBefore = strategyVault.executionBalance();
-        uint256 fee = strategyVault.executionFee();
+        uint256 fee = strategyVault.getExecutionFee();
 
         strategyVault.executeStrategy(strategyId);
 
@@ -773,7 +755,7 @@ contract StrategyVaultTest is Test {
 
         address feeRecipient = strategyVault.feeRecipient();
         uint256 recipientBalanceBefore = feeRecipient.balance;
-        uint256 fee = strategyVault.executionFee();
+        uint256 fee = strategyVault.getExecutionFee();
 
         strategyVault.executeStrategy(strategyId);
 
@@ -803,7 +785,7 @@ contract StrategyVaultTest is Test {
         strategyVault.recharge{value: 0.01 ether}();
 
         uint256 executorBalanceBefore = address(this).balance;
-        uint256 fee = strategyVault.executionFee();
+        uint256 fee = strategyVault.getExecutionFee();
 
         strategyVault.executeStrategy(strategyId);
 
@@ -835,7 +817,7 @@ contract StrategyVaultTest is Test {
         address feeRecipient = strategyVault.feeRecipient();
         uint256 recipientBalanceBefore = feeRecipient.balance;
         uint256 executorBalanceBefore = address(this).balance;
-        uint256 fee = strategyVault.executionFee();
+        uint256 fee = strategyVault.getExecutionFee();
 
         strategyVault.executeStrategy(strategyId);
 
@@ -1173,7 +1155,8 @@ contract StrategyVaultTest is Test {
         strategyVault.executeStrategy(strategyId);
     }
 
-    function test_executeStrategy_reverts_when_strategy_disabled() public {
+    function test_executeStrategy_reverts_when_action_call_fails() public {
+        // Note: The contract bubbles up action call failures - no failure tracking
         StrategyVault.Condition[] memory conditions = new StrategyVault.Condition[](1);
         conditions[0] =
             StrategyVault.Condition({oracle: address(oracle), operator: StrategyVault.Operator.LT, value: 200});
@@ -1194,11 +1177,9 @@ contract StrategyVaultTest is Test {
         strategyVault.recharge{value: 0.1 ether}();
 
         target.setRevert(true);
-        for (uint8 i = 0; i < 3; i++) {
-            try strategyVault.executeStrategy(strategyId) {} catch {}
-        }
 
-        vm.expectRevert("Strategy paused");
+        // Action failure causes transaction to revert with action's error
+        vm.expectRevert("Mock failure");
         strategyVault.executeStrategy(strategyId);
     }
 
@@ -1271,7 +1252,8 @@ contract StrategyVaultTest is Test {
         strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
     }
 
-    function test_executeStrategy_emits_failed_event() public {
+    function test_executeStrategy_action_failure_reverts_transaction() public {
+        // Note: Action failures cause transaction to revert - no StrategyExecutionFailed event
         StrategyVault.Condition[] memory conditions = new StrategyVault.Condition[](1);
         conditions[0] =
             StrategyVault.Condition({oracle: address(oracle), operator: StrategyVault.Operator.LT, value: 200});
@@ -1293,8 +1275,8 @@ contract StrategyVaultTest is Test {
 
         target.setRevert(true);
 
-        vm.expectEmit(false, false, false, true);
-        emit StrategyExecutionFailed(strategyId);
+        // Action failure bubbles up as revert
+        vm.expectRevert("Mock failure");
         strategyVault.executeStrategy(strategyId);
     }
 

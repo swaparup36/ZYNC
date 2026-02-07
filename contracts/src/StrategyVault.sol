@@ -5,6 +5,10 @@ import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/shared/interf
 import {SafeERC20} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 
+interface IStrategyVaultFactory {
+    function executionFee() external view returns (uint256);
+}
+
 contract StrategyVault {
     using SafeERC20 for IERC20;
 
@@ -59,7 +63,7 @@ contract StrategyVault {
 
     mapping(address => mapping(bytes4 => bool)) allowedActions;
     uint8 MAX_FAILURES;
-    uint256 public executionFee; // e.g. 0.001 ETH
+    address public immutable factory;
     // ETH hold for execution fees
     uint256 public executionBalance;
     address public feeRecipient;
@@ -69,7 +73,7 @@ contract StrategyVault {
         owner = _owner;
         feeRecipient = _feeRecipient;
         MAX_FAILURES = 3;
-        executionFee = 0.0003 ether; // Default execution fee
+        factory = msg.sender;
     }
 
     event StrategyCreated(uint256 indexed strategyId);
@@ -304,11 +308,13 @@ contract StrategyVault {
     }
 
     function simulateStrategy(uint256 strategyId) external view {
+        uint256 executionFee = getExecutionFee();
         require(executionBalance >= executionFee, "Insufficient execution balance");
         _validateStrategy(strategyId);
     }
 
     function executeStrategy(uint256 strategyId) external payable nonReentrant {
+        uint256 executionFee = getExecutionFee();
         require(executionBalance >= executionFee, "Insufficient execution balance");
 
         _validateStrategy(strategyId);
@@ -403,5 +409,9 @@ contract StrategyVault {
     function getStrategy(uint256 strategyId) external view returns (Strategy memory) {
         require(strategyId < strategies.length, "Invalid strategy");
         return strategies[strategyId];
+    }
+
+    function getExecutionFee() public view returns (uint256) {
+        return IStrategyVaultFactory(factory).executionFee();
     }
 }

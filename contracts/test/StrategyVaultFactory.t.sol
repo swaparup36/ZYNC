@@ -119,7 +119,7 @@ contract StrategyVaultFactoryTest is Test {
         address vaultAddr = factory.createVault();
 
         StrategyVault vault = StrategyVault(payable(vaultAddr));
-        assertEq(vault.executionFee(), 0.0003 ether);
+        assertEq(vault.getExecutionFee(), 0.003 ether);
     }
 
     function testVaultCreated_event_emitted() public {
