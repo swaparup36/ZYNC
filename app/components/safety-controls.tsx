@@ -48,9 +48,6 @@ export function SafetyControls({ onChange }: SafetyControlsProps) {
               step="0.001"
               className="bg-muted border-accent/40 text-foreground placeholder:text-muted-foreground"
             />
-            <div className="px-3 py-2 bg-muted border border-accent/40 rounded-md flex items-center text-xs text-accent font-bold">
-              ETH
-            </div>
           </div>
           <p className="text-xs text-muted-foreground mt-1 font-medium">
             Maximum amount that can be used in a single execution
