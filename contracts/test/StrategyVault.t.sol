@@ -50,7 +50,8 @@ contract StrategyVaultTest is Test {
             amountSource: StrategyVault.AmountSource.CALLDATA,
             value: 0,
             data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether),
-            allowances: allowances
+            allowances: allowances,
+            transfers: new StrategyVault.Transfer[](0)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
@@ -74,7 +75,8 @@ contract StrategyVaultTest is Test {
             amountSource: StrategyVault.AmountSource.CALLDATA,
             value: 0,
             data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether),
-            allowances: allowances
+            allowances: allowances,
+            transfers: new StrategyVault.Transfer[](0)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
@@ -98,7 +100,8 @@ contract StrategyVaultTest is Test {
             amountSource: StrategyVault.AmountSource.CALLDATA,
             value: 0,
             data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether),
-            allowances: allowances
+            allowances: allowances,
+            transfers: new StrategyVault.Transfer[](0)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
@@ -122,7 +125,8 @@ contract StrategyVaultTest is Test {
             amountSource: StrategyVault.AmountSource.CALLDATA,
             value: 0,
             data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether),
-            allowances: allowances
+            allowances: allowances,
+            transfers: new StrategyVault.Transfer[](0)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
@@ -146,7 +150,8 @@ contract StrategyVaultTest is Test {
             amountSource: StrategyVault.AmountSource.CALLDATA,
             value: 0,
             data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether),
-            allowances: allowances
+            allowances: allowances,
+            transfers: new StrategyVault.Transfer[](0)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
@@ -170,7 +175,8 @@ contract StrategyVaultTest is Test {
             amountSource: StrategyVault.AmountSource.CALLDATA,
             value: 0,
             data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether),
-            allowances: allowances
+            allowances: allowances,
+            transfers: new StrategyVault.Transfer[](0)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
@@ -194,7 +200,8 @@ contract StrategyVaultTest is Test {
             amountSource: StrategyVault.AmountSource.CALLDATA,
             value: 0,
             data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether),
-            allowances: allowances
+            allowances: allowances,
+            transfers: new StrategyVault.Transfer[](0)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
@@ -220,7 +227,8 @@ contract StrategyVaultTest is Test {
             amountSource: StrategyVault.AmountSource.CALLDATA,
             value: 0,
             data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether),
-            allowances: allowances
+            allowances: allowances,
+            transfers: new StrategyVault.Transfer[](0)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 hours);
@@ -248,7 +256,8 @@ contract StrategyVaultTest is Test {
             amountSource: StrategyVault.AmountSource.CALLDATA,
             value: 0,
             data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether),
-            allowances: allowances
+            allowances: allowances,
+            transfers: new StrategyVault.Transfer[](0)
         });
 
         uint256 strategyId =
@@ -280,7 +289,8 @@ contract StrategyVaultTest is Test {
             amountSource: StrategyVault.AmountSource.CALLDATA,
             value: 0,
             data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether),
-            allowances: allowances
+            allowances: allowances,
+            transfers: new StrategyVault.Transfer[](0)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
@@ -309,7 +319,8 @@ contract StrategyVaultTest is Test {
             amountSource: StrategyVault.AmountSource.CALLDATA,
             value: 0,
             data: abi.encodeWithSelector(MockTarget.doAnotherThing.selector, 0.5 ether),
-            allowances: allowances
+            allowances: allowances,
+            transfers: new StrategyVault.Transfer[](0)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
@@ -335,7 +346,8 @@ contract StrategyVaultTest is Test {
             amountSource: StrategyVault.AmountSource.CALLDATA,
             value: 0,
             data: abi.encodeWithSelector(MockTarget.doAnotherThingThatIsNowAllowed.selector, 0.5 ether),
-            allowances: allowances
+            allowances: allowances,
+            transfers: new StrategyVault.Transfer[](0)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
@@ -361,7 +373,8 @@ contract StrategyVaultTest is Test {
             amountSource: StrategyVault.AmountSource.CALLDATA,
             value: 0,
             data: abi.encodeWithSelector(MockTarget.doThing.selector, 2 ether),
-            allowances: allowances
+            allowances: allowances,
+            transfers: new StrategyVault.Transfer[](0)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
@@ -385,7 +398,8 @@ contract StrategyVaultTest is Test {
             amountSource: StrategyVault.AmountSource.MSG_VALUE,
             value: 2 ether,
             data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether),
-            allowances: allowances
+            allowances: allowances,
+            transfers: new StrategyVault.Transfer[](0)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
@@ -410,7 +424,8 @@ contract StrategyVaultTest is Test {
             amountSource: StrategyVault.AmountSource.CALLDATA,
             value: 0,
             data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether),
-            allowances: allowances
+            allowances: allowances,
+            transfers: new StrategyVault.Transfer[](0)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
@@ -438,7 +453,8 @@ contract StrategyVaultTest is Test {
             amountSource: StrategyVault.AmountSource.CALLDATA,
             value: 0,
             data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether),
-            allowances: allowances
+            allowances: allowances,
+            transfers: new StrategyVault.Transfer[](0)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
@@ -473,7 +489,8 @@ contract StrategyVaultTest is Test {
             amountSource: StrategyVault.AmountSource.CALLDATA,
             value: 0,
             data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether),
-            allowances: allowances
+            allowances: allowances,
+            transfers: new StrategyVault.Transfer[](0)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
@@ -507,7 +524,8 @@ contract StrategyVaultTest is Test {
             amountSource: StrategyVault.AmountSource.CALLDATA,
             value: 0,
             data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether),
-            allowances: allowances
+            allowances: allowances,
+            transfers: new StrategyVault.Transfer[](0)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
@@ -586,7 +604,8 @@ contract StrategyVaultTest is Test {
             amountSource: StrategyVault.AmountSource.MSG_VALUE,
             value: 0.5 ether,
             data: abi.encodeWithSelector(MockTarget.doThing.selector, 0),
-            allowances: allowances
+            allowances: allowances,
+            transfers: new StrategyVault.Transfer[](0)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
@@ -613,7 +632,8 @@ contract StrategyVaultTest is Test {
             amountSource: StrategyVault.AmountSource.NONE,
             value: 0,
             data: abi.encodeWithSelector(MockTarget.doThing.selector, 0),
-            allowances: allowances
+            allowances: allowances,
+            transfers: new StrategyVault.Transfer[](0)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
@@ -647,7 +667,8 @@ contract StrategyVaultTest is Test {
             amountSource: StrategyVault.AmountSource.MSG_VALUE,
             value: 1 ether,
             data: abi.encodeWithSelector(MockTarget.doThing.selector, 0),
-            allowances: allowances
+            allowances: allowances,
+            transfers: new StrategyVault.Transfer[](0)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 2 ether, 0, block.timestamp + 1 days);
@@ -691,7 +712,8 @@ contract StrategyVaultTest is Test {
             amountSource: StrategyVault.AmountSource.CALLDATA,
             value: 0,
             data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether),
-            allowances: allowances
+            allowances: allowances,
+            transfers: new StrategyVault.Transfer[](0)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
@@ -715,7 +737,8 @@ contract StrategyVaultTest is Test {
             amountSource: StrategyVault.AmountSource.CALLDATA,
             value: 0,
             data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether),
-            allowances: allowances
+            allowances: allowances,
+            transfers: new StrategyVault.Transfer[](0)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
@@ -743,7 +766,8 @@ contract StrategyVaultTest is Test {
             amountSource: StrategyVault.AmountSource.CALLDATA,
             value: 0,
             data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether),
-            allowances: allowances
+            allowances: allowances,
+            transfers: new StrategyVault.Transfer[](0)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
@@ -756,8 +780,8 @@ contract StrategyVaultTest is Test {
 
         strategyVault.executeStrategy(strategyId);
 
-        // Half of fee goes to feeRecipient
-        assertEq(feeRecipient.balance, recipientBalanceBefore + fee / 2);
+        // 10% of fee goes to feeRecipient
+        assertEq(feeRecipient.balance, recipientBalanceBefore + fee / 10);
     }
 
     function test_execute_sends_fee_to_executor() public {
@@ -774,7 +798,8 @@ contract StrategyVaultTest is Test {
             amountSource: StrategyVault.AmountSource.CALLDATA,
             value: 0,
             data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether),
-            allowances: allowances
+            allowances: allowances,
+            transfers: new StrategyVault.Transfer[](0)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
@@ -786,8 +811,8 @@ contract StrategyVaultTest is Test {
 
         strategyVault.executeStrategy(strategyId);
 
-        // Half of fee goes to executor (msg.sender)
-        assertEq(address(this).balance, executorBalanceBefore + fee / 2);
+        // 90% of fee goes to executor (msg.sender)
+        assertEq(address(this).balance, executorBalanceBefore + (fee * 9) / 10);
     }
 
     function test_execute_splits_fee_correctly() public {
@@ -804,7 +829,8 @@ contract StrategyVaultTest is Test {
             amountSource: StrategyVault.AmountSource.CALLDATA,
             value: 0,
             data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether),
-            allowances: allowances
+            allowances: allowances,
+            transfers: new StrategyVault.Transfer[](0)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
@@ -818,9 +844,9 @@ contract StrategyVaultTest is Test {
 
         strategyVault.executeStrategy(strategyId);
 
-        // Verify fee is split 50/50
-        assertEq(feeRecipient.balance, recipientBalanceBefore + fee / 2);
-        assertEq(address(this).balance, executorBalanceBefore + fee / 2);
+        // Verify fee is split 10/90 (feeRecipient/executor)
+        assertEq(feeRecipient.balance, recipientBalanceBefore + fee / 10);
+        assertEq(address(this).balance, executorBalanceBefore + (fee * 9) / 10);
     }
 
     function test_createStrategy_reverts_when_not_owner() public {
@@ -837,7 +863,8 @@ contract StrategyVaultTest is Test {
             amountSource: StrategyVault.AmountSource.CALLDATA,
             value: 0,
             data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether),
-            allowances: allowances
+            allowances: allowances,
+            transfers: new StrategyVault.Transfer[](0)
         });
 
         vm.prank(address(0x1234));
@@ -859,7 +886,8 @@ contract StrategyVaultTest is Test {
             amountSource: StrategyVault.AmountSource.CALLDATA,
             value: 0,
             data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether),
-            allowances: allowances
+            allowances: allowances,
+            transfers: new StrategyVault.Transfer[](0)
         });
 
         vm.expectRevert("Expiry must be in the future");
@@ -878,7 +906,8 @@ contract StrategyVaultTest is Test {
             amountSource: StrategyVault.AmountSource.CALLDATA,
             value: 0,
             data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether),
-            allowances: allowances
+            allowances: allowances,
+            transfers: new StrategyVault.Transfer[](0)
         });
 
         vm.expectRevert("No conditions");
@@ -899,7 +928,8 @@ contract StrategyVaultTest is Test {
             amountSource: StrategyVault.AmountSource.CALLDATA,
             value: 0,
             data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether),
-            allowances: allowances
+            allowances: allowances,
+            transfers: new StrategyVault.Transfer[](0)
         });
 
         vm.expectRevert("Invalid maxAmount");
@@ -920,7 +950,8 @@ contract StrategyVaultTest is Test {
             amountSource: StrategyVault.AmountSource.CALLDATA,
             value: 0,
             data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether),
-            allowances: allowances
+            allowances: allowances,
+            transfers: new StrategyVault.Transfer[](0)
         });
 
         vm.expectEmit(true, false, false, false);
@@ -946,7 +977,8 @@ contract StrategyVaultTest is Test {
             amountSource: StrategyVault.AmountSource.CALLDATA,
             value: 0,
             data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether),
-            allowances: allowances
+            allowances: allowances,
+            transfers: new StrategyVault.Transfer[](0)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
@@ -1012,7 +1044,8 @@ contract StrategyVaultTest is Test {
             amountSource: StrategyVault.AmountSource.CALLDATA,
             value: 0,
             data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether),
-            allowances: allowances
+            allowances: allowances,
+            transfers: new StrategyVault.Transfer[](0)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
@@ -1088,7 +1121,8 @@ contract StrategyVaultTest is Test {
             amountSource: StrategyVault.AmountSource.CALLDATA,
             value: 0,
             data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether),
-            allowances: allowances
+            allowances: allowances,
+            transfers: new StrategyVault.Transfer[](0)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
@@ -1113,7 +1147,8 @@ contract StrategyVaultTest is Test {
             amountSource: StrategyVault.AmountSource.CALLDATA,
             value: 0,
             data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether),
-            allowances: allowances
+            allowances: allowances,
+            transfers: new StrategyVault.Transfer[](0)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 hours);
@@ -1139,7 +1174,8 @@ contract StrategyVaultTest is Test {
             amountSource: StrategyVault.AmountSource.CALLDATA,
             value: 0,
             data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether),
-            allowances: allowances
+            allowances: allowances,
+            transfers: new StrategyVault.Transfer[](0)
         });
 
         uint256 strategyId =
@@ -1167,7 +1203,8 @@ contract StrategyVaultTest is Test {
             amountSource: StrategyVault.AmountSource.CALLDATA,
             value: 0,
             data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether),
-            allowances: allowances
+            allowances: allowances,
+            transfers: new StrategyVault.Transfer[](0)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
@@ -1194,7 +1231,8 @@ contract StrategyVaultTest is Test {
             amountSource: StrategyVault.AmountSource.CALLDATA,
             value: 0,
             data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether),
-            allowances: allowances
+            allowances: allowances,
+            transfers: new StrategyVault.Transfer[](0)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
@@ -1218,7 +1256,8 @@ contract StrategyVaultTest is Test {
             amountSource: StrategyVault.AmountSource.CALLDATA,
             value: 0,
             data: hex"",
-            allowances: allowances
+            allowances: allowances,
+            transfers: new StrategyVault.Transfer[](0)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
@@ -1242,7 +1281,8 @@ contract StrategyVaultTest is Test {
             amountSource: StrategyVault.AmountSource.MSG_VALUE,
             value: 0.5 ether,
             data: abi.encodeWithSelector(MockTarget.doThing.selector, 0),
-            allowances: allowances
+            allowances: allowances,
+            transfers: new StrategyVault.Transfer[](0)
         });
 
         vm.expectRevert("Action must be payable");
@@ -1264,7 +1304,8 @@ contract StrategyVaultTest is Test {
             amountSource: StrategyVault.AmountSource.CALLDATA,
             value: 0,
             data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether),
-            allowances: allowances
+            allowances: allowances,
+            transfers: new StrategyVault.Transfer[](0)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
@@ -1291,7 +1332,8 @@ contract StrategyVaultTest is Test {
             amountSource: StrategyVault.AmountSource.CALLDATA,
             value: 0,
             data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether),
-            allowances: allowances
+            allowances: allowances,
+            transfers: new StrategyVault.Transfer[](0)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
@@ -1321,7 +1363,8 @@ contract StrategyVaultTest is Test {
             amountSource: StrategyVault.AmountSource.CALLDATA,
             value: 0,
             data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether),
-            allowances: allowances
+            allowances: allowances,
+            transfers: new StrategyVault.Transfer[](0)
         });
 
         uint256 strategyId = rejecterVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
@@ -1352,7 +1395,8 @@ contract StrategyVaultTest is Test {
             amountSource: StrategyVault.AmountSource.CALLDATA,
             value: 0,
             data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether),
-            allowances: allowances
+            allowances: allowances,
+            transfers: new StrategyVault.Transfer[](0)
         });
 
         vm.prank(address(rejecter));
@@ -1389,7 +1433,8 @@ contract StrategyVaultTest is Test {
             amountSource: StrategyVault.AmountSource.CALLDATA,
             value: 0,
             data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether),
-            allowances: allowances
+            allowances: allowances,
+            transfers: new StrategyVault.Transfer[](0)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
@@ -1413,7 +1458,8 @@ contract StrategyVaultTest is Test {
             amountSource: StrategyVault.AmountSource.CALLDATA,
             value: 0,
             data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether),
-            allowances: allowances
+            allowances: allowances,
+            transfers: new StrategyVault.Transfer[](0)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
@@ -1439,7 +1485,8 @@ contract StrategyVaultTest is Test {
             amountSource: StrategyVault.AmountSource.CALLDATA,
             value: 0,
             data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether),
-            allowances: allowances
+            allowances: allowances,
+            transfers: new StrategyVault.Transfer[](0)
         });
 
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);

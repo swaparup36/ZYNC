@@ -41,6 +41,7 @@ contract StrategyVault {
         uint256 value; // ETH to send when vault funds payable actions
         bytes data;
         Allowance[] allowances;
+        Transfer[] transfers;
     }
 
     enum Operator {
@@ -59,6 +60,12 @@ contract StrategyVault {
         address token; // ERC20 token
         address spender; // contract that pulls tokens
         uint256 amount; // max allowance
+    }
+
+    struct Transfer {
+        address token;      // ERC20 token (address(0) for ETH)
+        address to;         // recipient
+        uint256 amount;     // amount to transfer
     }
 
     mapping(address => mapping(bytes4 => bool)) allowedActions;
@@ -144,6 +151,16 @@ contract StrategyVault {
             a.allowances.push(al);
         }
 
+        for (uint256 i = 0; i < action.transfers.length; i++) {
+            Transfer calldata t = action.transfers[i];
+
+            require(t.to != address(0), "Invalid transfer to");
+            require(t.amount > 0, "Invalid transfer amount");
+
+            a.transfers.push(t);
+        }
+
+
         strategy.maxAmount = maxAmount;
         strategy.cooldown = cooldown;
         strategy.lastExecution = 0;
@@ -162,6 +179,20 @@ contract StrategyVault {
             uint256 current = IERC20(al.token).allowance(address(this), al.spender);
             if (current < al.amount) {
                 IERC20(al.token).forceApprove(al.spender, al.amount);
+            }
+        }
+    }
+
+    function _executeTransfers(Transfer[] storage transfers) internal {
+        for (uint256 i = 0; i < transfers.length; i++) {
+            Transfer storage t = transfers[i];
+
+            if (t.token == address(0)) {
+                // ETH transfer
+                (bool ok,) = payable(t.to).call{value: t.amount}("");
+                require(ok, "ETH transfer failed");
+            } else {
+                IERC20(t.token).safeTransfer(t.to, t.amount);
             }
         }
     }
@@ -296,6 +327,20 @@ contract StrategyVault {
         } else {
             // AmountSource.NONE -> nothing to validate
         }
+
+        uint256 totalTransfer;
+
+        for (uint256 i = 0; i < action.transfers.length; i++) {
+            Transfer storage t = action.transfers[i];
+
+            if (t.token != address(0)) {
+                totalTransfer += t.amount;
+            } else {
+                totalTransfer += t.amount; // ETH
+            }
+        }
+
+        require(totalTransfer <= strategy.maxAmount, "Transfers exceed maxAmount");
     }
 
     function simulateStrategy(uint256 strategyId) external view {
@@ -320,10 +365,14 @@ contract StrategyVault {
         }
 
         _ensureAllowances(action);
+        _executeTransfers(action.transfers);
 
         (bool success, bytes memory returndata) = action.target.call{value: callValue}(action.data);
 
         if (!success) {
+            strategy.failureCount++;
+            emit StrategyExecutionFailed(strategyId);
+            
             if (returndata.length > 0) {
                 assembly {
                     revert(add(returndata, 32), mload(returndata))
@@ -335,10 +384,11 @@ contract StrategyVault {
         strategy.lastExecution = block.timestamp;
         executionBalance -= executionFee;
 
-        (bool ok,) = payable(feeRecipient).call{value: executionFee / 2}("");
+        // 10 % to feeRecipient, 90% to executor
+        (bool ok,) = payable(feeRecipient).call{value: executionFee / 10}("");
         require(ok, "Fee transfer failed");
 
-        (ok,) = payable(msg.sender).call{value: executionFee / 2}("");
+        (ok,) = payable(msg.sender).call{value: (executionFee * 9) / 10}("");
         require(ok, "Executor fee transfer failed");
 
         strategy.failureCount = 0;

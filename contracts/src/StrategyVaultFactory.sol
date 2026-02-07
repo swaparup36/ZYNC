@@ -16,7 +16,7 @@ contract StrategyVaultFactory {
     constructor(address _treasury) {
         protocolTreasury = _treasury;
         protocolOwner = msg.sender;
-        executionFee = 0.003 ether;
+        executionFee = 0.01 ether;
     }
 
     modifier onlyOwner() {

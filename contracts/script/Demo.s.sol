@@ -48,7 +48,8 @@ contract SmartVaultScript is Script {
             amountSource: StrategyVault.AmountSource.CALLDATA,
             value: 0,
             data: abi.encodeWithSelector(MockTarget.doThing.selector, 0.5 ether),
-            allowances: allowances
+            allowances: allowances,
+            transfers: new StrategyVault.Transfer[](0)
         });
         uint256 strategyId = strategyVault.createStrategy(conditions, action, 1 ether, 0, block.timestamp + 1 days);
 
