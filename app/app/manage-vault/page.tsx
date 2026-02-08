@@ -59,6 +59,18 @@ import { toast } from "sonner";
 const { readContract } = await import('wagmi/actions');
 const { config } = await import('@/lib/wagmi');
 
+interface Allowance {
+  token: `0x${string}`;
+  spender: `0x${string}`;
+  amount: bigint;
+}
+
+interface Transfer {
+  token: `0x${string}`;
+  to: `0x${string}`;
+  amount: bigint;
+}
+
 interface Strategy {
   id: bigint;
   conditions: Array<{
@@ -74,6 +86,8 @@ interface Strategy {
     amountSource: number;
     value: bigint;
     data: `0x${string}`;
+    allowances: Allowance[];
+    transfers: Transfer[];
   };
   maxAmount: bigint;
   cooldown: bigint;
@@ -82,6 +96,14 @@ interface Strategy {
   paused: boolean;
   faliureCount: bigint;
   abi?: any[];
+}
+
+interface InsufficientToken {
+  address: `0x${string}`;
+  symbol: string;
+  required: bigint;
+  balance: bigint;
+  decimals: number;
 }
 
 type DepositType = "ETH" | "ERC20";
@@ -125,6 +147,8 @@ function ManageVaultContent() {
   const [hasCheckedExecution, setHasCheckedExecution] = useState(false);
   const [actionAllowed, setActionAllowed] = useState<boolean>(false);
   const [checkingActionAllowed, setCheckingActionAllowed] = useState(false);
+  const [insufficientTokens, setInsufficientTokens] = useState<InsufficientToken[]>([]);
+  const [checkingAllowances, setCheckingAllowances] = useState(false);
 
   useEffect(() => {
     if (vaultAddress && isConnected) {
@@ -190,6 +214,84 @@ function ManageVaultContent() {
       setActionAllowed(false);
     } finally {
       setCheckingActionAllowed(false);
+    }
+  };
+
+  const checkAllowanceBalances = async (strategy: Strategy) => {
+    if (!strategy || !vaultAddress) return;
+
+    const allowances = strategy.action.allowances;
+    if (!allowances || allowances.length === 0) {
+      setInsufficientTokens([]);
+      return;
+    }
+
+    try {
+      setCheckingAllowances(true);
+      const insufficient: InsufficientToken[] = [];
+
+      for (const allowance of allowances) {
+        try {
+          // Get token balance, decimals, and symbol in parallel
+          const [balance, decimals, symbol] = await Promise.all([
+            getVaultTokenBalance(vaultAddress, allowance.token),
+            (async () => {
+              try {
+                const result = await readContract(config, {
+                  address: allowance.token,
+                  abi: [{
+                    name: 'decimals',
+                    type: 'function',
+                    stateMutability: 'view',
+                    inputs: [],
+                    outputs: [{ type: 'uint8' }],
+                  }],
+                  functionName: 'decimals',
+                });
+                return Number(result);
+              } catch {
+                return 18;
+              }
+            })(),
+            (async () => {
+              try {
+                const result = await readContract(config, {
+                  address: allowance.token,
+                  abi: [{
+                    name: 'symbol',
+                    type: 'function',
+                    stateMutability: 'view',
+                    inputs: [],
+                    outputs: [{ type: 'string' }],
+                  }],
+                  functionName: 'symbol',
+                });
+                return result as string;
+              } catch {
+                return allowance.token.slice(0, 6) + '...' + allowance.token.slice(-4);
+              }
+            })()
+          ]);
+
+          if (balance < allowance.amount) {
+            insufficient.push({
+              address: allowance.token,
+              symbol,
+              required: allowance.amount,
+              balance,
+              decimals,
+            });
+          }
+        } catch (error) {
+          console.error(`Error checking balance for token ${allowance.token}:`, error);
+        }
+      }
+
+      setInsufficientTokens(insufficient);
+    } catch (error) {
+      console.error("Error checking allowance balances:", error);
+    } finally {
+      setCheckingAllowances(false);
     }
   };
 
@@ -1007,8 +1109,10 @@ function ManageVaultContent() {
                     setHasCheckedExecution(false);
                     setCanExecute(false);
                     setActionAllowed(false);
+                    setInsufficientTokens([]);
                     setStrategyModalOpen(true);
                     checkActionAllowed(strategy);
+                    checkAllowanceBalances(strategy);
                   }}
                   className="border border-border rounded-lg p-4 cursor-pointer hover:border-accent hover:bg-accent/5 transition-all"
                 >
@@ -1079,8 +1183,10 @@ function ManageVaultContent() {
                           setHasCheckedExecution(false);
                           setCanExecute(false);
                           setActionAllowed(false);
+                          setInsufficientTokens([]);
                           setStrategyModalOpen(true);
                           checkActionAllowed(strategy);
+                          checkAllowanceBalances(strategy);
                         }}
                       >
                         Manage
@@ -1408,6 +1514,40 @@ function ManageVaultContent() {
                       ).toLocaleString()}
                     </p>
                   </div>
+
+                  {/* Token Allowances Check */}
+                  {checkingAllowances ? (
+                    <div className="flex items-center gap-2 text-blue-600 bg-blue-600/10 px-3 py-2 rounded">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span className="text-xs font-medium">
+                        Checking token balances...
+                      </span>
+                    </div>
+                  ) : insufficientTokens.length > 0 ? (
+                    <div className="space-y-2">
+                      <p className="font-semibold text-red-500 text-xs">
+                        Insufficient Token Balances:
+                      </p>
+                      {insufficientTokens.map((token, idx) => (
+                        <div
+                          key={idx}
+                          className="flex items-center gap-2 text-red-600 bg-red-600/10 px-3 py-2 rounded"
+                        >
+                          <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                          <span className="text-xs font-medium">
+                            Insufficient {token.symbol}: Need {formatUnits(token.required, token.decimals)}, Have {formatUnits(token.balance, token.decimals)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : selectedStrategy.action.allowances?.length > 0 ? (
+                    <div className="flex items-center gap-2 text-green-600 bg-green-600/10 px-3 py-2 rounded">
+                      <CheckCircle2 className="h-4 w-4" />
+                      <span className="text-xs font-medium">
+                        All required token balances are sufficient
+                      </span>
+                    </div>
+                  ) : null}
 
                   {hasCheckedExecution && (
                     canExecute ? (
