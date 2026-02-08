@@ -3,6 +3,7 @@
 import { Suspense, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { toast } from '@/hooks/use-toast'
 import { ArrowLeft, ArrowRight } from 'lucide-react'
 import { TriggerBuilder, TriggerBuilderValue } from '@/components/trigger-builder'
 import { ActionBuilder } from '@/components/action-builder-zapier'
@@ -11,7 +12,7 @@ import { DepositModal } from '@/components/deposit-modal'
 import { ActionModeToggle, type ActionMode } from '@/components/create-strategy/action-mode-toggle'
 import { UniswapSwapForm } from '@/components/create-strategy/uniswap-swap-form'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { StrategyAction, StrategyCondition, StrategyOperator, StrategyAmountSource, Allowance } from '@/types/types'
+import { StrategyAction, StrategyCondition, StrategyOperator, StrategyAmountSource, Allowance, Transfer } from '@/types/types'
 import { 
   createStrategy, 
   decodeEventLogAndReturn, 
@@ -28,7 +29,7 @@ import {
 import { SEPOLIA_ORACLE_SOURCES } from '@/lib/oracles'
 import { useAccount } from 'wagmi'
 import { encodeFunctionData } from 'viem'
-import { getTokenByAddress, formatTokenAmount, UNIVERSAL_ROUTER_ADDRESS } from '@/lib/actions/uniswap'
+import { getTokenByAddress, formatTokenAmount, UNISWAP_V2_ROUTER_ADDRESS } from '@/lib/actions/uniswap'
 
 type TriggerSection = {
   id: string
@@ -83,6 +84,23 @@ const convertValueToBigInt = (value: string): bigint => {
 
 async function encodeFunctionDataFromAction(action: any): Promise<`0x${string}`> {
   try {
+    if (action.data && typeof action.data === 'string' && action.data.startsWith('0x') && action.data.length > 10) {
+      // Verify the selector in data matches action.selector
+      const dataSelector = `0x${action.data.slice(2, 10)}` as `0x${string}`;
+      if (dataSelector.toLowerCase() === action.selector?.toLowerCase()) {
+        console.log('Using pre-encoded action data:', {
+          selector: action.selector,
+          dataLength: action.data.length,
+        });
+        return action.data as `0x${string}`;
+      } else {
+        console.warn('Pre-encoded data selector mismatch, will re-encode', {
+          actionSelector: action.selector,
+          dataSelector: dataSelector,
+        });
+      }
+    }
+
     const selectedFunc = action.abi?.find((f: any) => f.name === action.selectedFunction)
     if (!selectedFunc) {
       console.warn('Function not found in ABI, using selector only')
@@ -166,27 +184,23 @@ function CreateAutomationPage() {
   const [showDepositModal, setShowDepositModal] = useState(false)
   const [isCreating, setIsCreating] = useState(false)
   
-  // New state for action mode
   const [actionMode, setActionMode] = useState<ActionMode>('custom')
 
   const vaultAddress = useSearchParams().get('vault')
   const router = useRouter()
   const { address: userAddress } = useAccount()
 
-  // Handler for action mode change - resets action state
   const handleActionModeChange = useCallback((mode: ActionMode) => {
     setActionMode(mode)
-    setAction(null) // Reset action when switching modes
+    setAction(null)
   }, [])
 
-  // Handler for custom action changes
   const handleCustomActionChange = useCallback((newAction: StrategyAction | null) => {
     if (actionMode === 'custom') {
       setAction(newAction)
     }
   }, [actionMode])
 
-  // Handler for prebuilt action changes
   const handlePrebuiltActionChange = useCallback((newAction: StrategyAction | null) => {
     if (actionMode === 'prebuilt') {
       setAction(newAction)
@@ -222,17 +236,17 @@ function CreateAutomationPage() {
 
   async function handleCreateAutomationStrategy() {
     if (!vaultAddress) {
-      alert('Vault address is missing')
+      toast({ title: 'Error', description: 'Vault address is missing', variant: 'destructive' })
       return
     }
 
     if (!allTriggersConfigured || !action || !safety) {
-      alert('Please complete all sections before creating the automation.')
+      toast({ title: 'Incomplete Configuration', description: 'Please complete all sections before creating the automation.', variant: 'destructive' })
       return
     }
 
     if (!userAddress) {
-      alert('Please connect your wallet')
+      toast({ title: 'Wallet Required', description: 'Please connect your wallet', variant: 'destructive' })
       return
     }
 
@@ -265,7 +279,7 @@ function CreateAutomationPage() {
           }
         } catch (error: any) {
           console.error('Error checking token balance:', error)
-          alert(error.message || 'Failed to check vault token balance')
+          toast({ title: 'Error', description: error.message || 'Failed to check vault token balance', variant: 'destructive' })
           setIsCreating(false)
           return
         }
@@ -279,7 +293,7 @@ function CreateAutomationPage() {
           }
         } catch (error: any) {
           console.error('Error checking ETH balance:', error)
-          alert(error.message || 'Failed to check vault ETH balance')
+          toast({ title: 'Error', description: error.message || 'Failed to check vault ETH balance', variant: 'destructive' })
           setIsCreating(false)
           return
         }
@@ -288,7 +302,7 @@ function CreateAutomationPage() {
       await createStrategyTransaction()
     } catch (error: any) {
       console.error('Error creating strategy:', error)
-      alert(error.message || 'Failed to create strategy')
+      toast({ title: 'Error', description: error.message || 'Failed to create strategy', variant: 'destructive' })
       setIsCreating(false)
     }
   }
@@ -367,14 +381,14 @@ function CreateAutomationPage() {
   async function createStrategyTransaction() {
     try {
       if (!vaultAddress || !action || !safety) {
-        alert('Missing required information for strategy creation.');
+        toast({ title: 'Error', description: 'Missing required information for strategy creation.', variant: 'destructive' });
         return;
       }
 
 
       if (!safety.maxAmount || !safety.cooldown || !safety.expiry) {
         console.log("safety: ", safety);
-        alert('Safety controls must have all values configured (maxAmount, cooldown, expiry).');
+        toast({ title: 'Configuration Error', description: 'Safety controls must have all values configured (maxAmount, cooldown, expiry).', variant: 'destructive' });
         return;
       }
 
@@ -388,7 +402,7 @@ function CreateAutomationPage() {
       
       if (!action.target || !action.selector || action.amountIndex === undefined || 
           action.isPayable === undefined || action.amountSource === undefined) {
-        alert('Action configuration is incomplete. Please ensure all action fields are set.');
+        toast({ title: 'Configuration Error', description: 'Action configuration is incomplete. Please ensure all action fields are set.', variant: 'destructive' });
         console.error('Missing action fields:', {
           target: action.target,
           selector: action.selector,
@@ -417,20 +431,26 @@ function CreateAutomationPage() {
         amount: BigInt(a.amount || '0')
       }))
 
+      const actionTransfers: Transfer[] = ((action as any).transfers || []).map((t: any) => ({
+        token: t.token as `0x${string}`,
+        to: t.to as `0x${string}`,
+        amount: BigInt(t.amount || '0')
+      }))
+
       for (let i = 0; i < actionAllowances.length; i++) {
         const allowance = actionAllowances[i];
         if (!allowance.token || allowance.token === '0x0000000000000000000000000000000000000000') {
-          alert(`Allowance #${i + 1}: Token address is invalid (zero address).`);
+          toast({ title: 'Invalid Allowance', description: `Allowance #${i + 1}: Token address is invalid (zero address).`, variant: 'destructive' });
           setIsCreating(false);
           return;
         }
         if (!allowance.spender || allowance.spender === '0x0000000000000000000000000000000000000000') {
-          alert(`Allowance #${i + 1}: Spender address is invalid (zero address).`);
+          toast({ title: 'Invalid Allowance', description: `Allowance #${i + 1}: Spender address is invalid (zero address).`, variant: 'destructive' });
           setIsCreating(false);
           return;
         }
         if (allowance.amount <= BigInt(0)) {
-          alert(`Allowance #${i + 1}: Amount must be greater than 0.`);
+          toast({ title: 'Invalid Allowance', description: `Allowance #${i + 1}: Amount must be greater than 0.`, variant: 'destructive' });
           setIsCreating(false);
           return;
         }
@@ -438,12 +458,8 @@ function CreateAutomationPage() {
         console.log(`Validating token contract: ${allowance.token}`);
         const isValidToken = await isValidERC20Token(allowance.token);
         if (!isValidToken) {
-          const errorMsg = `Allowance #${i + 1}: Token address ${allowance.token} is not a valid ERC20 contract on this network.\n\n` +
-            `Please verify:\n` +
-            `1. The token address is correct\n` +
-            `2. The token exists on Sepolia testnet\n` +
-            `3. You're connected to the correct network`;
-          alert(errorMsg);
+          const errorMsg = `Allowance #${i + 1}: Token address ${allowance.token} is not a valid ERC20 contract on this network.`;
+          toast({ title: 'Invalid Token', description: errorMsg, variant: 'destructive' });
           setIsCreating(false);
           return;
         }
@@ -461,6 +477,46 @@ function CreateAutomationPage() {
         console.warn("Note: If the transaction reverts, verify that the token addresses are valid ERC20 contracts on this network.");
       }
 
+      // Validate transfers
+      for (let i = 0; i < actionTransfers.length; i++) {
+        const transfer = actionTransfers[i];
+        if (!transfer.token || transfer.token === '0x0000000000000000000000000000000000000000') {
+          toast({ title: 'Invalid Transfer', description: `Transfer #${i + 1}: Token address is invalid (zero address).`, variant: 'destructive' });
+          setIsCreating(false);
+          return;
+        }
+        if (!transfer.to || transfer.to === '0x0000000000000000000000000000000000000000') {
+          toast({ title: 'Invalid Transfer', description: `Transfer #${i + 1}: Recipient address is invalid (zero address).`, variant: 'destructive' });
+          setIsCreating(false);
+          return;
+        }
+        if (transfer.amount <= BigInt(0)) {
+          toast({ title: 'Invalid Transfer', description: `Transfer #${i + 1}: Amount must be greater than 0.`, variant: 'destructive' });
+          setIsCreating(false);
+          return;
+        }
+
+        console.log(`Validating transfer token contract: ${transfer.token}`);
+        const isValidToken = await isValidERC20Token(transfer.token);
+        if (!isValidToken) {
+          const errorMsg = `Transfer #${i + 1}: Token address ${transfer.token} is not a valid ERC20 contract on this network.`;
+          toast({ title: 'Invalid Token', description: errorMsg, variant: 'destructive' });
+          setIsCreating(false);
+          return;
+        }
+        
+        const tokenSymbol = await getERC20Symbol(transfer.token);
+        console.log(`Transfer token ${transfer.token} validated successfully (Symbol: ${tokenSymbol || 'unknown'})`);
+      }
+
+      if (actionTransfers.length > 0) {
+        console.log("Token Transfers to be executed:", actionTransfers.map(t => ({
+          token: t.token,
+          to: t.to,
+          amount: t.amount.toString()
+        })));
+      }
+
       const strategyAction: StrategyAction = {
         target: action.target,
         selector: action.selector,
@@ -470,6 +526,7 @@ function CreateAutomationPage() {
         value: actionValue,
         data: encodedData,
         allowances: actionAllowances,
+        transfers: actionTransfers,
       }
 
       console.log("Strategy Action object:", {
@@ -479,11 +536,16 @@ function CreateAutomationPage() {
           token: a.token,
           spender: a.spender,
           amount: a.amount.toString()
+        })),
+        transfers: strategyAction.transfers.map(t => ({
+          token: t.token,
+          to: t.to,
+          amount: t.amount.toString()
         }))
       })
 
       if (action.amountSource !== StrategyAmountSource.MSG_VALUE && actionValue !== BigInt(0)) {
-        alert('Error: action.value must be 0 when amountSource is not MSG_VALUE');
+        toast({ title: 'Configuration Error', description: 'action.value must be 0 when amountSource is not MSG_VALUE', variant: 'destructive' });
         console.error('Invalid configuration: value is non-zero for non-MSG_VALUE amountSource', {
           amountSource: action.amountSource,
           value: actionValue.toString()
@@ -534,7 +596,7 @@ function CreateAutomationPage() {
 
       if (!event) {
         console.log("StrategyCreated event not found");
-        alert("Strategy created successfully!");
+        toast({ title: 'Success', description: 'Strategy created successfully!' });
         setIsCreating(false)
         return;
       }
@@ -543,7 +605,7 @@ function CreateAutomationPage() {
 
       if (!decoded || !decoded.args || decoded.args.length === 0) {
         console.log("Failed to decode event log");
-        alert("Strategy created successfully!");
+        toast({ title: 'Success', description: 'Strategy created successfully!' });
         setIsCreating(false)
         return;
       }
@@ -572,7 +634,7 @@ function CreateAutomationPage() {
       } catch (abiError) {
         console.error('Error storing ABI:', abiError);
       }
-      alert(`Strategy created successfully with ID: ${strategyId}`)
+      toast({ title: 'Success', description: `Strategy created successfully with ID: ${strategyId}` })
       setIsCreating(false)
       router.push(`/manage-vault?vault=${vaultAddress}`)
     } catch (error: any) {
@@ -595,7 +657,7 @@ function CreateAutomationPage() {
         }
       }
       
-      alert(errorMessage);
+      toast({ title: 'Error', description: errorMessage, variant: 'destructive' });
       setIsCreating(false)
     } finally {
       setIsCreating(false)
@@ -603,16 +665,16 @@ function CreateAutomationPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-black text-white">
       {/* Header */}
-      <header className="border-b border-accent/40 sticky top-0 z-50 bg-card">
+      <header className="border-b border-zinc-800 sticky top-0 z-50 bg-black/90 backdrop-blur-md">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center gap-4">
-          <Link href="/setup">
-            <Button variant="ghost" size="sm" className="text-accent hover:text-accent/80">
+          <Link href="/">
+            <Button variant="ghost" size="sm" className="text-white hover:text-white/80">
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
-          <h1 className="text-sm font-bold text-accent tracking-widest">CREATE AUTOMATION STRATEGY</h1>
+          <h1 className="text-sm font-bold text-white tracking-widest">CREATE AUTOMATION STRATEGY</h1>
         </div>
       </header>
 
@@ -629,11 +691,11 @@ function CreateAutomationPage() {
 
                 {index < triggerSections.length - 1 && (
                   <div className="flex flex-col items-center gap-1 w-full py-4">
-                    <div className="h-6 w-px bg-gradient-to-b from-accent to-accent/40" />
-                    <div className="px-3 py-1 rounded-full bg-card border border-accent text-[10px] font-bold tracking-[0.3em] text-accent">
+                    <div className="h-6 w-px bg-gradient-to-b from-white to-zinc-600" />
+                    <div className="px-3 py-1 rounded-full bg-black border border-zinc-700 text-[10px] font-bold tracking-[0.3em] text-white">
                       AND
                     </div>
-                    <div className="h-6 w-px bg-gradient-to-b from-accent/40 to-accent" />
+                    <div className="h-6 w-px bg-gradient-to-b from-zinc-600 to-white" />
                   </div>
                 )}
               </div>
@@ -641,19 +703,19 @@ function CreateAutomationPage() {
 
             {/* Add Trigger Button */}
             <div className="flex flex-col items-center gap-2 w-full py-6">
-              <div className="h-6 w-px bg-gradient-to-b from-accent to-accent/40" />
+              <div className="h-6 w-px bg-gradient-to-b from-white to-zinc-600" />
               <button
                 type="button"
                 onClick={handleAddTrigger}
-                className="h-10 cursor-pointer w-10 rounded-full bg-accent flex items-center justify-center text-card text-lg font-bold border-2 border-accent shadow-lg shadow-accent/50 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-accent transition-colors"
+                className="h-10 cursor-pointer w-10 rounded-full bg-white flex items-center justify-center text-black text-lg font-bold border border-zinc-600 shadow-lg hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-white transition-colors rainbow-border-hover"
                 aria-label="Add another trigger"
               >
                 +
               </button>
-              <span className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground font-semibold">
+              <span className="text-[10px] uppercase tracking-[0.3em] text-zinc-400 font-semibold">
                 Add Trigger
               </span>
-              <div className="h-6 w-px bg-gradient-to-b from-accent/40 to-accent" />
+              <div className="h-6 w-px bg-gradient-to-b from-zinc-600 to-white" />
             </div>
           </div>
 
@@ -678,69 +740,69 @@ function CreateAutomationPage() {
 
           {/* Review Summary */}
           <div className="w-full mt-12 space-y-6">
-            <div className="w-full border-2 border-accent/40 rounded-2xl p-6 bg-card shadow-lg shadow-accent/10">
+            <div className="w-full border border-zinc-700 rounded-2xl p-6 bg-black rainbow-border-hover">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-[10px] font-bold tracking-[0.3em] text-muted-foreground">STEP 4</p>
-                  <h2 className="text-lg font-bold text-accent tracking-widest">REVIEW & SUBMIT</h2>
+                  <p className="text-[10px] font-bold tracking-[0.3em] text-zinc-400">STEP 4</p>
+                  <h2 className="text-lg font-bold text-white tracking-widest">REVIEW & SUBMIT</h2>
                 </div>
-                <span className={`px-3 py-1 text-[10px] font-bold rounded-full tracking-[0.2em] ${isComplete ? 'bg-accent text-card' : 'bg-muted text-muted-foreground'}`}>
+                <span className={`px-3 py-1 text-[10px] font-bold rounded-full tracking-[0.2em] ${isComplete ? 'bg-white text-black' : 'bg-zinc-800 text-zinc-400'}`}>
                   {isComplete ? 'READY' : 'INCOMPLETE'}
                 </span>
               </div>
-              <p className="text-sm text-muted-foreground mt-2">
+              <p className="text-sm text-zinc-400 mt-2">
                 Double-check each section before deploying your automation strategy.
               </p>
 
               <div className="grid gap-6 mt-6">
                 <section>
-                  <p className="text-[11px] font-bold text-accent tracking-[0.3em] mb-2">TRIGGERS</p>
+                  <p className="text-[11px] font-bold text-white tracking-[0.3em] mb-2">TRIGGERS</p>
                   {configuredTriggers.length ? (
-                    <ul className="space-y-2 text-sm text-muted-foreground">
+                    <ul className="space-y-2 text-sm text-zinc-400">
                       {configuredTriggers.map((trigger, index) => (
                         <li key={`${trigger.oracle}-${index}`} className="flex items-center gap-2">
-                          <span className="text-xs font-bold text-accent">{index + 1}.</span>
+                          <span className="text-xs font-bold text-white">{index + 1}.</span>
                           <span>
                             {`${formatOracleLabel(trigger.oracle)} ${formatOperatorLabel(trigger.operator)} ${trigger.value}`}
                           </span>
                         </li>
                       ))}
                     </ul>                  ) : (
-                    <p className="text-xs text-muted-foreground italic">
+                    <p className="text-xs text-zinc-500 italic">
                       Configure at least one trigger to proceed.
                     </p>
                   )}
                 </section>
 
                 <section>
-                  <p className="text-[11px] font-bold text-accent tracking-[0.3em] mb-2">
-                    ACTION {actionMode === 'prebuilt' && <span className="text-muted-foreground">(UNISWAP SWAP)</span>}
+                  <p className="text-[11px] font-bold text-white tracking-[0.3em] mb-2">
+                    ACTION {actionMode === 'prebuilt' && <span className="text-zinc-400">(UNISWAP SWAP)</span>}
                   </p>
                   {action ? (
-                    <div className="text-sm text-muted-foreground space-y-1">
+                    <div className="text-sm text-zinc-400 space-y-1">
                       {actionMode === 'prebuilt' && action.functionArgs ? (
                         // Prebuilt action summary
                         <>
-                          <div className="bg-accent/5 border border-accent/20 rounded-lg p-3 space-y-2">
-                            <p className="text-xs font-bold text-accent tracking-wider mb-2">SWAP DETAILS</p>
+                          <div className="bg-zinc-900 border border-zinc-700 rounded-lg p-3 space-y-2">
+                            <p className="text-xs font-bold text-white tracking-wider mb-2">SWAP DETAILS</p>
                             <div className="grid grid-cols-2 gap-2">
                               <div>
-                                <span className="text-[10px] text-muted-foreground">From</span>
-                                <p className="font-mono text-foreground">
+                                <span className="text-[10px] text-zinc-500">From</span>
+                                <p className="font-mono text-white">
                                   {getTokenByAddress(action.functionArgs.tokenIn as `0x${string}`)?.symbol || 
                                     `${action.functionArgs.tokenIn?.slice(0, 8)}...`}
                                 </p>
                               </div>
                               <div>
-                                <span className="text-[10px] text-muted-foreground">To</span>
-                                <p className="font-mono text-foreground">
+                                <span className="text-[10px] text-zinc-500">To</span>
+                                <p className="font-mono text-white">
                                   {getTokenByAddress(action.functionArgs.tokenOut as `0x${string}`)?.symbol || 
                                     `${action.functionArgs.tokenOut?.slice(0, 8)}...`}
                                 </p>
                               </div>
                               <div>
-                                <span className="text-[10px] text-muted-foreground">Amount</span>
-                                <p className="font-mono text-foreground">
+                                <span className="text-[10px] text-zinc-500">Amount</span>
+                                <p className="font-mono text-white">
                                   {action.functionArgs.amountIn ? 
                                     formatTokenAmount(
                                       BigInt(action.functionArgs.amountIn), 
@@ -749,47 +811,50 @@ function CreateAutomationPage() {
                                 </p>
                               </div>
                               <div>
-                                <span className="text-[10px] text-muted-foreground">Slippage</span>
-                                <p className="font-mono text-foreground">
-                                  {action.functionArgs.slippageBps ? 
-                                    `${(parseInt(action.functionArgs.slippageBps) / 100).toFixed(2)}%` : '—'}
+                                <span className="text-[10px] text-zinc-500">Min. Output</span>
+                                <p className="font-mono text-white">
+                                  {action.functionArgs.amountOutMin ? 
+                                    formatTokenAmount(
+                                      BigInt(action.functionArgs.amountOutMin), 
+                                      getTokenByAddress(action.functionArgs.tokenOut as `0x${string}`)?.decimals || 18
+                                    ) : '—'}
                                 </p>
                               </div>
                             </div>
                           </div>
                           <p className="text-xs mt-2">
-                            <span className="text-accent font-semibold">Router:</span>{' '}
-                            <span className="font-mono">{UNIVERSAL_ROUTER_ADDRESS.slice(0, 10)}...{UNIVERSAL_ROUTER_ADDRESS.slice(-6)}</span>
+                            <span className="text-white font-semibold">Router:</span>{' '}
+                            <span className="font-mono">{UNISWAP_V2_ROUTER_ADDRESS.slice(0, 10)}...{UNISWAP_V2_ROUTER_ADDRESS.slice(-6)}</span>
                           </p>
                         </>
                       ) : (
                         // Custom action summary
                         <>
                           <p>
-                            <span className="text-accent font-semibold">Target:</span> {action.target || 'Not set'}
+                            <span className="text-white font-semibold">Target:</span> {action.target || 'Not set'}
                           </p>
                           <p>
-                            <span className="text-accent font-semibold">Selector:</span> {action.selector || 'Not set'}
+                            <span className="text-white font-semibold">Selector:</span> {action.selector || 'Not set'}
                           </p>
                           <p>
-                            <span className="text-accent font-semibold">Amount Index:</span>{' '}
+                            <span className="text-white font-semibold">Amount Index:</span>{' '}
                             {typeof action.amountIndex === 'number' ? action.amountIndex : 'Not set'}
                           </p>
                           <p>
-                            <span className="text-accent font-semibold">Funding:</span> {action.isPayable ? 'Payable' : 'Non-payable'}
+                            <span className="text-white font-semibold">Funding:</span> {action.isPayable ? 'Payable' : 'Non-payable'}
                           </p>
                           <p>
-                            <span className="text-accent font-semibold">Amount Source:</span> {action.amountSource ?? 'Not set'}
+                            <span className="text-white font-semibold">Amount Source:</span> {action.amountSource ?? 'Not set'}
                           </p>
                         </>
                       )}
                       {(action as any).allowances && (action as any).allowances.length > 0 && (
-                        <div className="mt-2 pt-2 border-t border-accent/20">
-                          <p className="text-accent font-semibold mb-1">Token Allowances:</p>
+                        <div className="mt-2 pt-2 border-t border-zinc-700">
+                          <p className="text-white font-semibold mb-1">Token Allowances:</p>
                           <ul className="space-y-1 text-xs">
                             {(action as any).allowances.map((a: any, idx: number) => (
-                              <li key={idx} className="bg-muted/50 p-2 rounded">
-                                <span className="text-accent">#{idx + 1}</span>
+                              <li key={idx} className="bg-zinc-900 p-2 rounded">
+                                <span className="text-white">#{idx + 1}</span>
                                 <span className="block">Token: <span className="font-mono">{a.token?.slice(0, 10)}...{a.token?.slice(-6)}</span></span>
                                 <span className="block">Spender: <span className="font-mono">{a.spender?.slice(0, 10)}...{a.spender?.slice(-6)}</span></span>
                                 <span className="block">Amount: <span className="font-mono">{typeof a.amount === 'bigint' ? a.amount.toString() : (a.amount?.length > 20 ? `${a.amount.slice(0, 10)}...` : a.amount)}</span></span>
@@ -798,31 +863,46 @@ function CreateAutomationPage() {
                           </ul>
                         </div>
                       )}
+                      {(action as any).transfers && (action as any).transfers.length > 0 && (
+                        <div className="mt-2 pt-2 border-t border-zinc-700">
+                          <p className="text-white font-semibold mb-1">Token Transfers:</p>
+                          <ul className="space-y-1 text-xs">
+                            {(action as any).transfers.map((t: any, idx: number) => (
+                              <li key={idx} className="bg-zinc-900 p-2 rounded">
+                                <span className="text-white">#{idx + 1}</span>
+                                <span className="block">Token: <span className="font-mono">{t.token?.slice(0, 10)}...{t.token?.slice(-6)}</span></span>
+                                <span className="block">Recipient: <span className="font-mono">{t.to?.slice(0, 10)}...{t.to?.slice(-6)}</span></span>
+                                <span className="block">Amount: <span className="font-mono">{typeof t.amount === 'bigint' ? t.amount.toString() : (t.amount?.length > 20 ? `${t.amount.slice(0, 10)}...` : t.amount)}</span></span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                     </div>
                   ) : (
-                    <p className="text-xs text-muted-foreground italic">Action configuration pending.</p>
+                    <p className="text-xs text-zinc-500 italic">Action configuration pending.</p>
                   )}
                 </section>
 
                 <section>
-                  <p className="text-[11px] font-bold text-accent tracking-[0.3em] mb-2">SAFETY</p>
+                  <p className="text-[11px] font-bold text-white tracking-[0.3em] mb-2">SAFETY</p>
                   {safety ? (
-                    <div className="text-sm text-muted-foreground grid grid-cols-3 gap-4">
+                    <div className="text-sm text-zinc-400 grid grid-cols-3 gap-4">
                       <div>
-                        <p className="text-[10px] font-semibold text-accent tracking-widest">MAX AMOUNT</p>
-                        <p className="font-mono text-base">{safety.maxAmount || '—'}</p>
+                        <p className="text-[10px] font-semibold text-white tracking-widest">MAX AMOUNT</p>
+                        <p className="font-mono text-base text-white">{safety.maxAmount || '—'}</p>
                       </div>
                       <div>
-                        <p className="text-[10px] font-semibold text-accent tracking-widest">COOLDOWN</p>
-                        <p className="font-mono text-base">{safety.cooldown || '—'}s</p>
+                        <p className="text-[10px] font-semibold text-white tracking-widest">COOLDOWN</p>
+                        <p className="font-mono text-base text-white">{safety.cooldown || '—'}s</p>
                       </div>
                       <div>
-                        <p className="text-[10px] font-semibold text-accent tracking-widest">EXPIRY</p>
-                        <p className="font-mono text-base">{safety.expiry || '—'}s</p>
+                        <p className="text-[10px] font-semibold text-white tracking-widest">EXPIRY</p>
+                        <p className="font-mono text-base text-white">{safety.expiry || '—'}s</p>
                       </div>
                     </div>
                   ) : (
-                    <p className="text-xs text-muted-foreground italic">Safety controls not configured.</p>
+                    <p className="text-xs text-zinc-500 italic">Safety controls not configured.</p>
                   )}
                 </section>
               </div>
@@ -830,8 +910,8 @@ function CreateAutomationPage() {
 
             {/* Navigation */}
             <div className="flex gap-4 justify-between w-full">
-              <Link href="/setup">
-                <Button variant="outline" className="border-accent text-accent hover:bg-accent/10 bg-transparent">
+              <Link href="/">
+                <Button variant="outline" className="border-zinc-600 text-white hover:bg-zinc-800 bg-black">
                   <ArrowLeft className="mr-2 h-4 w-4" />
                   Back
                 </Button>
@@ -840,7 +920,7 @@ function CreateAutomationPage() {
                 type="button"
                 disabled={!isComplete || isCreating}
                 onClick={handleCreateAutomationStrategy}
-                className={`${isComplete ? 'bg-accent text-card hover:bg-accent/90' : 'bg-muted text-muted-foreground'} font-bold`}
+                className={`${isComplete ? 'bg-white text-black hover:bg-white/90' : 'bg-zinc-800 text-zinc-500'} font-bold`}
               >
                 {isCreating ? 'Creating...' : 'Review & Create'}
                 <ArrowRight className="ml-2 h-4 w-4" />

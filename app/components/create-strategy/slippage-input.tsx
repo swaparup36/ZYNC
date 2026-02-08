@@ -55,8 +55,8 @@ export function SlippageInput({ value, onChange, className }: SlippageInputProps
   return (
     <div className={cn('space-y-2', className)}>
       <div className="flex items-center justify-between">
-        <label className="text-xs font-bold text-accent tracking-wider">SLIPPAGE TOLERANCE</label>
-        <span className="text-xs font-mono text-foreground">{(value / 100).toFixed(2)}%</span>
+        <label className="text-xs font-bold text-white tracking-wider">SLIPPAGE TOLERANCE</label>
+        <span className="text-xs font-mono text-white">{(value / 100).toFixed(2)}%</span>
       </div>
       
       <div className="flex gap-2">
@@ -68,8 +68,8 @@ export function SlippageInput({ value, onChange, className }: SlippageInputProps
             className={cn(
               'flex-1 px-3 py-2 text-xs font-bold rounded-md transition-all duration-200 border',
               value === preset.bps && !customMode
-                ? 'bg-accent text-card border-accent'
-                : 'bg-muted text-muted-foreground border-accent/20 hover:border-accent/40 hover:text-foreground'
+                ? 'bg-white text-black border-white'
+                : 'bg-zinc-900 text-zinc-400 border-zinc-700 hover:border-zinc-500 hover:text-white'
             )}
           >
             {preset.label}
@@ -82,8 +82,8 @@ export function SlippageInput({ value, onChange, className }: SlippageInputProps
           className={cn(
             'flex-1 px-3 py-2 text-xs font-bold rounded-md transition-all duration-200 border',
             (customMode || isCustomValue)
-              ? 'bg-accent text-card border-accent'
-              : 'bg-muted text-muted-foreground border-accent/20 hover:border-accent/40 hover:text-foreground'
+              ? 'bg-white text-black border-white'
+              : 'bg-zinc-900 text-zinc-400 border-zinc-700 hover:border-zinc-500 hover:text-white'
           )}
         >
           Custom
@@ -100,9 +100,9 @@ export function SlippageInput({ value, onChange, className }: SlippageInputProps
             placeholder="Enter slippage %"
             value={customValue || (isCustomValue ? (value / 100).toString() : '')}
             onChange={(e) => handleCustomChange(e.target.value)}
-            className="font-mono text-xs bg-muted border-accent/40 text-foreground placeholder:text-muted-foreground pr-8"
+            className="font-mono text-xs bg-zinc-900 border-zinc-600 text-white placeholder:text-zinc-500 pr-8"
           />
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-400">
             %
           </span>
         </div>
@@ -124,7 +124,7 @@ export function SlippageInput({ value, onChange, className }: SlippageInputProps
         </div>
       )}
 
-      <p className="text-[10px] text-muted-foreground">
+      <p className="text-[10px] text-zinc-400">
         Maximum price difference you're willing to accept for this trade.
       </p>
     </div>

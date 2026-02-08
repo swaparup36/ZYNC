@@ -4,11 +4,12 @@ import { IBM_Plex_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 import { Providers } from '../components/providers'
+import { Toaster } from '@/components/ui/toaster'
 
 const _ibmPlexMono = IBM_Plex_Mono({ weight: ['400', '500', '600', '700'], subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'ZYNX - Non-Custodial Onchain Strategy Builder',
+  title: 'ZYNC - Non-Custodial Onchain Strategy Builder',
   description: 'Create non-custodial automations for smart contracts. IF/THEN rules with permissionless execution.',
   generator: 'v0.app',
   icons: {
@@ -32,6 +33,7 @@ export default function RootLayout({
         <Providers>
           {children}
           <Analytics />
+          <Toaster />
         </Providers>
       </body>
     </html>

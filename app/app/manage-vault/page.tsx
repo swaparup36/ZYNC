@@ -218,7 +218,6 @@ function ManageVaultContent() {
   const checkCanExecute = async () => {
     if (!selectedStrategy || !vaultAddress) return;
 
-    // Get the actual strategy index from the strategies array
     const strategyIndex = strategies.indexOf(selectedStrategy);
     if (strategyIndex === -1) {
       toast.error("Strategy not found in list");
@@ -277,7 +276,7 @@ function ManageVaultContent() {
 
     try {
       setProcessing(true);
-      // Use parseUnits with the decimals
+      
       const amount = parseUnits(depositAmount, tokenDecimals);
 
       // Check allownce and approve if needed
@@ -386,7 +385,7 @@ function ManageVaultContent() {
             return Number(result);
           } catch (error) {
             console.warn("Could not fetch token decimals, defaulting to 18:", error);
-            return 18; // Default to 18 if decimals call fails
+            return 18; // Default to 18 on failure
           }
         })(),
         (async () => {
@@ -407,7 +406,7 @@ function ManageVaultContent() {
             return result as string;
           } catch (error) {
             console.warn("Could not fetch token symbol:", error);
-            return ""; // Empty string if symbol call fails
+            return ""; // Empty string on failure
           }
         })()
       ]);
@@ -430,7 +429,6 @@ function ManageVaultContent() {
   const handleExecuteStrategy = async () => {
     if (!selectedStrategy || !vaultAddress) return;
 
-    // Get the actual strategy index (ID) from the strategies array
     const strategyIndex = strategies.indexOf(selectedStrategy);
     if (strategyIndex === -1) {
       toast.error("Strategy not found in list");
@@ -467,7 +465,6 @@ function ManageVaultContent() {
   const handlePauseStrategy = async () => {
     if (!selectedStrategy || !vaultAddress) return;
 
-    // Get the actual strategy index (ID) from the strategies array
     const strategyIndex = strategies.indexOf(selectedStrategy);
     if (strategyIndex === -1) {
       toast.error("Strategy not found in list");
@@ -731,7 +728,7 @@ function ManageVaultContent() {
         
         const sig = `${item.name}(${item.inputs?.map((i: any) => i.type).join(',') || ''})`;
         const hash = keccak256(toHex(sig));
-        const calculatedSelector = hash.slice(0, 10); // First 4 bytes (8 hex chars + '0x')
+        const calculatedSelector = hash.slice(0, 10); // First 4 bytes
         return calculatedSelector.toLowerCase() === functionSelector.toLowerCase();
       });
       
@@ -745,7 +742,7 @@ function ManageVaultContent() {
     const params = data.slice(10);
     if (params.length === 0) return `${functionName}()\nNo parameters`;
 
-    // Format in chunks of 64 characters (32 bytes)
+    // Format in chunks of 64 characters
     const chunks = [];
     for (let i = 0; i < params.length; i += 64) {
       chunks.push(params.slice(i, i + 64));
@@ -1498,7 +1495,7 @@ function ManageVaultContent() {
                       try {
                         setProcessing(true);
                         toast.info("Simulating strategy...");
-                        await simulateStrategy(vaultAddress, BigInt(strategyIndex));
+                        await simulateStrategy(vaultAddress!, BigInt(strategyIndex));
                         toast.success("Simulation passed! Strategy can be executed.");
                       } catch (error: any) {
                         console.error("Simulation failed:", error);

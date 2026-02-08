@@ -1,20 +1,58 @@
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
 import { ArrowRight, Lock, Zap, Shield } from 'lucide-react'
+import Image from 'next/image'
+import { WebGLShader } from "@/components/ui/web-gl-shader";
+import { LiquidButton } from '@/components/ui/liquid-glass-button' 
+
+function DemoOne() {
+  return (
+    <div className="relative flex w-full flex-col items-center justify-center overflow-hidden py-24">
+      <WebGLShader/> 
+      <div className="relative border border-[#27272a] p-2 w-full mx-auto max-w-4xl">
+      <main className="relative border border-[#27272a] py-16 px-8 overflow-hidden">
+                <h1 className="mb-6 text-white text-center text-5xl font-extrabold tracking-tighter md:text-[clamp(2rem,6vw,5rem)] leading-tight">Automate onchain actions with rules, not bots.</h1>
+                <p className="text-white/60 px-6 text-center text-sm md:text-base lg:text-lg max-w-2xl mx-auto">Create non-custodial automations that anyone can execute safely. No backend. No intermediaries. Just smart contracts and your rules.</p>
+                <div className="my-8 flex items-center justify-center gap-1">
+                    <span className="relative flex h-3 w-3 items-center justify-center">
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-500 opacity-75"></span>
+                        <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500"></span>
+                    </span>
+                    <p className="text-xs text-green-500">Live on Sepolia</p>
+                </div>
+                
+            <div className="flex flex-col sm:flex-row gap-4 justify-center"> 
+                <Link href="/vault">
+                  <LiquidButton className="text-white border rounded-full" size={'xl'}>
+                    Create Automation
+                  </LiquidButton>
+                </Link>
+                <Button variant="outline" size="lg" className="text-base bg-transparent rounded-full px-8">
+                  View How It Works
+                </Button>
+            </div> 
+            </main>
+            </div>
+    </div>
+  )
+}
 
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background text-foreground dark">
       {/* Header */}
-      <header className="border-b border-border">
-        <div className="max-w-6xl mx-auto px-4 py-6 flex items-center justify-between">
-          <div className="text-2xl font-bold text-accent">ZYNC</div>
+      <header className="border-b border-border/30 relative z-50 bg-background/80 backdrop-blur-md">
+        <div className="mx-auto px-32 py-6 flex items-center justify-between">
+          <div className="text-2xl font-bold text-accent">
+            <Image src="/logo.png" alt="Smart Vault Logo" width={70} height={70} className="inline-block mr-2" />
+          </div>
           <nav className="flex gap-6 items-center">
             <button className="text-sm text-muted-foreground hover:text-foreground transition">
               How It Works
             </button>
             <Link href="/vault">
-              <Button size="sm">
+              <Button size="sm" className='py-5'>
                 Create Automation
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
@@ -24,60 +62,46 @@ export default function LandingPage() {
       </header>
 
       {/* Hero Section */}
-      <main className="max-w-6xl mx-auto px-4 py-24">
-        <div className="text-center space-y-8">
-          <h1 className="text-5xl md:text-6xl font-bold text-balance">
-            Automate onchain actions with rules, not bots.
-          </h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto text-balance">
-            Create non-custodial automations that anyone can execute safely. No backend. No intermediaries. Just smart contracts and your rules.
-          </p>
+      <DemoOne />
 
-          {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center pt-8">
-            <Link href="/vault">
-              <Button size="lg" className="text-base">
-                Create Automation
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-            </Link>
-            <Button variant="outline" size="lg" className="text-base bg-transparent">
-              View How It Works
-            </Button>
-          </div>
-        </div>
+      {/* Features Grid */}
+      <main className="px-40 mx-auto pb-24">
+        <div className="grid md:grid-cols-3 gap-8 pt-16 border-t border-border/30">
+          <Card>
+            <CardContent className="space-y-4">
+              <div className="h-12 w-12 bg-white/10 rounded-lg flex items-center justify-center">
+                <Lock className="h-6 w-6 text-white" />
+              </div>
+              <h3 className="text-lg font-semibold text-white">Non-Custodial</h3>
+              <p className="text-sm text-white/60">
+                Your funds never leave your control. Automations execute directly from your vault.
+              </p>
+            </CardContent>
+          </Card>
 
-        {/* Features Grid */}
-        <div className="grid md:grid-cols-3 gap-8 mt-24 pt-16 border-t border-border">
-          <div className="space-y-4">
-            <div className="h-12 w-12 bg-accent/10 rounded-lg flex items-center justify-center">
-              <Lock className="h-6 w-6 text-accent" />
-            </div>
-            <h3 className="text-lg font-semibold">Non-Custodial</h3>
-            <p className="text-sm text-muted-foreground">
-              Your funds never leave your control. Automations execute directly from your vault.
-            </p>
-          </div>
+          <Card>
+            <CardContent className="space-y-4">
+              <div className="h-12 w-12 bg-white/10 rounded-lg flex items-center justify-center">
+                <Zap className="h-6 w-6 text-white" />
+              </div>
+              <h3 className="text-lg font-semibold text-white">Permissionless</h3>
+              <p className="text-sm text-white/60">
+                Anyone can execute your strategies when conditions are met. No permissions required.
+              </p>
+            </CardContent>
+          </Card>
 
-          <div className="space-y-4">
-            <div className="h-12 w-12 bg-accent/10 rounded-lg flex items-center justify-center">
-              <Zap className="h-6 w-6 text-accent" />
-            </div>
-            <h3 className="text-lg font-semibold">Permissionless</h3>
-            <p className="text-sm text-muted-foreground">
-              Anyone can execute your strategies when conditions are met. No permissions required.
-            </p>
-          </div>
-
-          <div className="space-y-4">
-            <div className="h-12 w-12 bg-accent/10 rounded-lg flex items-center justify-center">
-              <Shield className="h-6 w-6 text-accent" />
-            </div>
-            <h3 className="text-lg font-semibold">Safe Bounds</h3>
-            <p className="text-sm text-muted-foreground">
-              Set maximum amounts, cooldowns, and expiry times to define automation limits.
-            </p>
-          </div>
+          <Card>
+            <CardContent className="space-y-4">
+              <div className="h-12 w-12 bg-white/10 rounded-lg flex items-center justify-center">
+                <Shield className="h-6 w-6 text-white" />
+              </div>
+              <h3 className="text-lg font-semibold text-white">Safe Bounds</h3>
+              <p className="text-sm text-white/60">
+                Set maximum amounts, cooldowns, and expiry times to define automation limits.
+              </p>
+            </CardContent>
+          </Card>
         </div>
       </main>
     </div>

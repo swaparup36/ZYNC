@@ -63,32 +63,32 @@ export function TriggerBuilder({ onChange, order = 1 }: TriggerBuilderProps) {
   }
 
   return (
-    <div className="w-full border-2 border-border rounded-lg p-6 bg-card relative shadow-lg shadow-accent/20 hover:shadow-accent/40 transition-all">
+    <div className="w-full border border-zinc-700 rounded-lg p-6 bg-black relative rainbow-border-hover">
       {/* Header with icon and menu */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 bg-accent px-3 py-1.5 rounded-full border border-accent">
-            <Zap className="h-4 w-4 text-card font-bold" />
-            <span className="text-xs font-bold text-card tracking-widest">TRIGGER</span>
+          <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-full border border-zinc-600">
+            <Zap className="h-4 w-4 text-black font-bold" />
+            <span className="text-xs font-bold text-black tracking-widest">TRIGGER</span>
           </div>
-          <span className="text-sm font-bold text-accent">{order}.</span>
+          <span className="text-sm font-bold text-white">{order}.</span>
         </div>
-        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-accent hover:text-accent/80">
+        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-white hover:text-white/80">
           <MoreVertical className="h-4 w-4" />
         </Button>
       </div>
 
       {/* Description */}
-      <p className="text-xs text-muted-foreground mb-4 font-medium">
+      <p className="text-sm text-zinc-400 mb-4 font-medium">
         Select the event that starts your automation
       </p>
 
       {/* Content - Hidden by default, shown on expand */}
       {isExpanded && (
-        <div className="space-y-4 border-t border-accent/30 pt-4">
+        <div className="space-y-4 border-t border-zinc-700 pt-4">
           {/* Oracle Source */}
           <div>
-            <label className="text-xs font-bold text-accent mb-2 block tracking-wider">
+            <label className="text-xs font-bold text-white mb-2 block tracking-wider">
               TRIGGER EVENT
             </label>
             <Select
@@ -99,7 +99,7 @@ export function TriggerBuilder({ onChange, order = 1 }: TriggerBuilderProps) {
                 handleChange(val, operator, value)
               }}
             >
-              <SelectTrigger className="bg-muted border-accent/40 text-foreground">
+              <SelectTrigger className="bg-zinc-900 border-zinc-600 text-white">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -115,7 +115,7 @@ export function TriggerBuilder({ onChange, order = 1 }: TriggerBuilderProps) {
           {/* Operator and Value in a row */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-bold text-accent mb-2 block tracking-wider">
+              <label className="text-xs font-bold text-white mb-2 block tracking-wider">
                 CONDITION
               </label>
               <Select
@@ -125,7 +125,7 @@ export function TriggerBuilder({ onChange, order = 1 }: TriggerBuilderProps) {
                   handleChange(oracle, val, value)
                 }}
               >
-                <SelectTrigger className="bg-muted border-accent/40 text-foreground">
+                <SelectTrigger className="bg-zinc-900 border-zinc-600 text-white">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -138,7 +138,7 @@ export function TriggerBuilder({ onChange, order = 1 }: TriggerBuilderProps) {
               </Select>
             </div>
             <div>
-              <label className="text-xs font-bold text-accent mb-2 block tracking-wider">
+              <label className="text-xs font-bold text-white mb-2 block tracking-wider">
                 VALUE
               </label>
               <Input
@@ -149,15 +149,15 @@ export function TriggerBuilder({ onChange, order = 1 }: TriggerBuilderProps) {
                   setValue(e.target.value)
                   handleChange(oracle, operator, e.target.value)
                 }}
-                className="bg-muted border-accent/40 text-foreground placeholder:text-muted-foreground"
+                className="bg-zinc-900 border-zinc-600 text-white placeholder:text-zinc-500"
                 step="0.01"
               />
             </div>
           </div>
 
           {/* Preview */}
-          <div className="mt-4 p-3 bg-background rounded border border-accent/30">
-            <p className="text-xs text-muted-foreground font-medium">
+          <div className="mt-4 p-3 bg-zinc-900 rounded border border-zinc-700">
+            <p className="text-xs text-zinc-400 font-medium">
               {`>>> ${getOracleLabel()} ${getOperatorLabel().split('(')[0].trim()} ${value || '—'}`}
             </p>
           </div>
@@ -168,14 +168,14 @@ export function TriggerBuilder({ onChange, order = 1 }: TriggerBuilderProps) {
       {!isExpanded ? (
         <button
           onClick={() => setIsExpanded(true)}
-          className="w-full text-left text-xs text-accent hover:text-accent/80 font-bold tracking-wide mt-2"
+          className="w-full text-left text-xs text-white hover:text-white/80 font-bold tracking-wide mt-2"
         >
           ► CONFIGURE TRIGGER
         </button>
       ) : (
         <button
           onClick={() => setIsExpanded(false)}
-          className="w-full text-left text-xs text-muted-foreground hover:text-accent mt-4 font-medium tracking-wide"
+          className="w-full text-left text-xs text-zinc-400 hover:text-white mt-4 font-medium tracking-wide"
         >
           ▼ HIDE DETAILS
         </button>

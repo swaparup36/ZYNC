@@ -13,12 +13,19 @@ import {
 } from '@/components/ui/select'
 import { AlertCircle, Code2, MoreVertical, ChevronDown, Plus, Trash2 } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { toast } from '@/hooks/use-toast'
 import { keccak256, toHex, toBytes } from 'viem'
-import { StrategyAmountSource, Allowance } from '@/types/types'
+import { StrategyAmountSource, Allowance, Transfer } from '@/types/types'
 
 interface AllowanceInput {
   token: string
   spender: string
+  amount: string
+}
+
+interface TransferInput {
+  token: string
+  to: string
   amount: string
 }
 
@@ -41,6 +48,8 @@ export function ActionBuilder({ onChange }: ActionBuilderProps) {
   const [depositAmount, setDepositAmount] = useState('')
   const [requiresAllowance, setRequiresAllowance] = useState<boolean>(false)
   const [allowances, setAllowances] = useState<AllowanceInput[]>([])
+  const [requiresTransfer, setRequiresTransfer] = useState<boolean>(false)
+  const [transfers, setTransfers] = useState<TransferInput[]>([])
   const [step, setStep] = useState(1)
 
   const handleContractAddressChange = (value: string) => {
@@ -57,16 +66,13 @@ export function ActionBuilder({ onChange }: ActionBuilderProps) {
       let abiArray: any[] = []
       
       if (Array.isArray(parsed)) {
-        // Standard ABI array format
-        abiArray = parsed
+        abiArray = parsed // Standard ABI array format
       } else if (parsed.abi && Array.isArray(parsed.abi)) {
-        // Compilation artifact with .abi property
-        abiArray = parsed.abi
+        abiArray = parsed.abi // Compilation artifact with .abi property
       } else if (parsed.interface && Array.isArray(parsed.interface)) {
-        // Some artifacts use .interface property
-        abiArray = parsed.interface
+        abiArray = parsed.interface // Some artifacts use .interface property
       } else {
-        alert('Invalid ABI format. Please provide a valid ABI array.')
+        toast({ title: 'Invalid Format', description: 'Invalid ABI format. Please provide a valid ABI array.', variant: 'destructive' })
         return
       }
       
@@ -77,7 +83,7 @@ export function ActionBuilder({ onChange }: ActionBuilderProps) {
       )
       
       if (funcs.length === 0) {
-        alert('No payable or non-payable functions found in the ABI.')
+        toast({ title: 'No Functions Found', description: 'No payable or non-payable functions found in the ABI.', variant: 'destructive' })
         return
       }
       
@@ -85,7 +91,7 @@ export function ActionBuilder({ onChange }: ActionBuilderProps) {
       setStep(3)
     } catch (error) {
       console.log('Invalid ABI JSON: ', error)
-      alert('Failed to parse ABI. Please ensure it is valid JSON.')
+      toast({ title: 'Parse Error', description: 'Failed to parse ABI. Please ensure it is valid JSON.', variant: 'destructive' })
     }
   }
 
@@ -98,7 +104,6 @@ export function ActionBuilder({ onChange }: ActionBuilderProps) {
     setStep(4)
   }
 
-  // Update action whenever any relevant state changes
   useEffect(() => {
     if (!selectedFunction || !contractAddress) {
       onChange?.(null)
@@ -111,18 +116,15 @@ export function ActionBuilder({ onChange }: ActionBuilderProps) {
       return
     }
 
-    // Check if all function arguments are filled
     const allArgsFilled = selectedFunc.inputs?.every((_: any, idx: number) => 
       functionArgs[`arg_${idx}`] !== undefined && functionArgs[`arg_${idx}`] !== ''
     ) ?? true
 
-    // Check if amount source is selected
     if (!amountSource) {
       onChange?.(null)
       return
     }
 
-    // Check amount source specific requirements
     if (amountSource === 'CALLDATA' && !amountIndex) {
       onChange?.(null)
       return
@@ -133,13 +135,11 @@ export function ActionBuilder({ onChange }: ActionBuilderProps) {
       return
     }
 
-    // Check if deposit requirements are filled
     if (requiresDeposit === 'ERC20' && (!depositTokenAddress || !depositAmount)) {
       onChange?.(null)
       return
     }
 
-    // Validate ERC20 token address format
     if (requiresDeposit === 'ERC20' && depositTokenAddress) {
       if (!depositTokenAddress.startsWith('0x') || depositTokenAddress.length !== 42) {
         onChange?.(null)
@@ -152,7 +152,6 @@ export function ActionBuilder({ onChange }: ActionBuilderProps) {
       return
     }
 
-    // Check if allowances are valid (if required)
     if (requiresAllowance && allowances.length > 0) {
       const allAllowancesValid = allowances.every(a => 
         a.token && a.token.startsWith('0x') && a.token.length === 42 &&
@@ -165,17 +164,27 @@ export function ActionBuilder({ onChange }: ActionBuilderProps) {
       }
     }
 
+    if (requiresTransfer && transfers.length > 0) {
+      const allTransfersValid = transfers.every(t => 
+        t.token && t.token.startsWith('0x') && t.token.length === 42 &&
+        t.to && t.to.startsWith('0x') && t.to.length === 42 &&
+        t.amount && t.amount.trim() !== ''
+      )
+      if (!allTransfersValid) {
+        onChange?.(null)
+        return
+      }
+    }
+
     if (!allArgsFilled) {
       onChange?.(null)
       return
     }
 
-    // Generate function selector (first 4 bytes of keccak256 hash of signature)
     const functionSignature = `${selectedFunc.name}(${selectedFunc.inputs?.map((i: any) => i.type).join(',') ?? ''})`
     const signatureHash = keccak256(toBytes(functionSignature))
     const selector = `0x${signatureHash.slice(2, 10)}` as `0x${string}`
 
-    // Map amount source to enum value
     let amountSourceEnum: StrategyAmountSource
     if (amountSource === 'CALLDATA') {
       amountSourceEnum = StrategyAmountSource.CALLDATA
@@ -185,11 +194,16 @@ export function ActionBuilder({ onChange }: ActionBuilderProps) {
       amountSourceEnum = StrategyAmountSource.NONE
     }
 
-    // Convert allowances to proper format
     const formattedAllowances = requiresAllowance ? allowances.map(a => ({
       token: a.token as `0x${string}`,
       spender: a.spender as `0x${string}`,
       amount: a.amount
+    })) : []
+
+    const formattedTransfers = requiresTransfer ? transfers.map(t => ({
+      token: t.token as `0x${string}`,
+      to: t.to as `0x${string}`,
+      amount: t.amount
     })) : []
 
     onChange?.({
@@ -198,7 +212,6 @@ export function ActionBuilder({ onChange }: ActionBuilderProps) {
       amountIndex: amountSource === 'CALLDATA' ? parseInt(amountIndex) : 0,
       isPayable: isPayable,
       amountSource: amountSourceEnum,
-      // Additional metadata for the page component
       functionArgs,
       abi: functions,
       selectedFunction,
@@ -207,7 +220,9 @@ export function ActionBuilder({ onChange }: ActionBuilderProps) {
       depositAmount,
       msgValue,
       requiresAllowance,
-      allowances: formattedAllowances
+      allowances: formattedAllowances,
+      requiresTransfer,
+      transfers: formattedTransfers
     })
   }, [
     contractAddress,
@@ -221,49 +236,51 @@ export function ActionBuilder({ onChange }: ActionBuilderProps) {
     depositAmount,
     requiresAllowance,
     allowances,
+    requiresTransfer,
+    transfers,
     functions,
     isPayable,
     onChange
   ])
 
   return (
-    <div className="w-full border-2 border-border rounded-lg p-6 bg-card relative mt-0 shadow-lg shadow-accent/20 hover:shadow-accent/40 transition-all">
+    <div className="w-full border border-zinc-700 rounded-lg p-6 bg-black relative mt-0 rainbow-border-hover">
       {/* Header with icon and menu */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 bg-accent px-3 py-1.5 rounded-full border border-accent">
-            <Code2 className="h-4 w-4 text-card font-bold" />
-            <span className="text-xs font-bold text-card tracking-widest">ACTION</span>
+          <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-full border border-zinc-600">
+            <Code2 className="h-4 w-4 text-black font-bold" />
+            <span className="text-xs font-bold text-black tracking-widest">ACTION</span>
           </div>
-          <span className="text-sm font-bold text-accent">2.</span>
+          <span className="text-sm font-bold text-white">2.</span>
         </div>
-        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-accent hover:text-accent/80">
+        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-white hover:text-white/80">
           <MoreVertical className="h-4 w-4" />
         </Button>
       </div>
 
       {/* Description */}
-      <p className="text-xs text-muted-foreground mb-4 font-medium">
+      <p className="text-sm text-zinc-400 mb-4 font-medium">
         Select the event for your automation to run
       </p>
 
       {/* Content - Hidden by default, shown on expand */}
       {isExpanded && (
-        <div className="space-y-4 border-t border-accent/30 pt-4">
+        <div className="space-y-4 border-t border-zinc-700 pt-4">
           {/* Step 1: Contract Address */}
           {step >= 1 && (
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <div className="h-5 w-5 rounded-full bg-accent flex items-center justify-center text-xs font-bold text-card">
+                <div className="h-5 w-5 rounded-full bg-white flex items-center justify-center text-xs font-bold text-black">
                   1
                 </div>
-                <label className="text-xs font-bold text-accent tracking-wider">TARGET CONTRACT</label>
+                <label className="text-xs font-bold text-white tracking-wider">TARGET CONTRACT</label>
               </div>
               <Input
                 placeholder="0x..."
                 value={contractAddress}
                 onChange={(e) => handleContractAddressChange(e.target.value)}
-                className="font-mono text-xs bg-muted border-accent/40 text-foreground placeholder:text-muted-foreground"
+                className="font-mono text-xs bg-zinc-900 border-zinc-600 text-white placeholder:text-zinc-500"
               />
             </div>
           )}
@@ -272,21 +289,21 @@ export function ActionBuilder({ onChange }: ActionBuilderProps) {
           {step >= 2 && (
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <div className="h-5 w-5 rounded-full bg-accent flex items-center justify-center text-xs font-bold text-card">
+                <div className="h-5 w-5 rounded-full bg-white flex items-center justify-center text-xs font-bold text-black">
                   2
                 </div>
-                <label className="text-xs font-bold text-accent tracking-wider">CONTRACT ABI</label>
+                <label className="text-xs font-bold text-white tracking-wider">CONTRACT ABI</label>
               </div>
               <Textarea
                 placeholder='Paste your contract ABI JSON here...'
                 value={abiInput}
                 onChange={(e) => setAbiInput(e.target.value)}
-                className="font-mono text-xs min-h-20 bg-muted border-accent/40 text-foreground placeholder:text-muted-foreground"
+                className="font-mono text-xs min-h-20 bg-zinc-900 border-zinc-600 text-white placeholder:text-zinc-500"
               />
               <Button
                 onClick={parseABI}
                 disabled={!contractAddress || !abiInput}
-                className="w-full bg-accent text-card hover:bg-accent/90 font-bold text-xs"
+                className="w-full bg-white text-black hover:bg-white/90 font-bold text-xs"
               >
                 PARSE ABI
               </Button>
@@ -297,13 +314,13 @@ export function ActionBuilder({ onChange }: ActionBuilderProps) {
           {step >= 3 && functions.length > 0 && (
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <div className="h-5 w-5 rounded-full bg-accent flex items-center justify-center text-xs font-bold text-card">
+                <div className="h-5 w-5 rounded-full bg-white flex items-center justify-center text-xs font-bold text-black">
                   3
                 </div>
-                <label className="text-xs font-bold text-accent tracking-wider">SELECT FUNCTION</label>
+                <label className="text-xs font-bold text-white tracking-wider">SELECT FUNCTION</label>
               </div>
               <Select value={selectedFunction} onValueChange={handleFunctionSelect}>
-                <SelectTrigger className="bg-muted border-accent/40 text-foreground">
+                <SelectTrigger className="bg-zinc-900 border-zinc-600 text-white">
                   <SelectValue placeholder="Choose function..." />
                 </SelectTrigger>
                 <SelectContent>
@@ -312,7 +329,7 @@ export function ActionBuilder({ onChange }: ActionBuilderProps) {
                       <div className="flex items-center gap-2 font-mono text-xs">
                         <span>{func.name}</span>
                         {func.stateMutability === 'payable' && (
-                          <span className="text-xs bg-accent text-card px-2 py-0.5 rounded font-bold">
+                          <span className="text-xs bg-white text-black px-2 py-0.5 rounded font-bold">
                             payable
                           </span>
                         )}
@@ -328,18 +345,18 @@ export function ActionBuilder({ onChange }: ActionBuilderProps) {
           {step >= 4 && selectedFunctionData && (
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <div className="h-5 w-5 rounded-full bg-accent flex items-center justify-center text-xs font-bold text-card">
+                <div className="h-5 w-5 rounded-full bg-white flex items-center justify-center text-xs font-bold text-black">
                   4
                 </div>
-                <label className="text-xs font-bold text-accent tracking-wider">FUNCTION ARGUMENTS</label>
+                <label className="text-xs font-bold text-white tracking-wider">FUNCTION ARGUMENTS</label>
               </div>
               {selectedFunctionData.inputs && selectedFunctionData.inputs.length > 0 ? (
                 <div className="space-y-2">
                   {selectedFunctionData.inputs?.map((input: any, idx: number) => (
                     <div key={`${input.name}-${idx}`}>
-                      <label className="text-xs text-accent font-bold mb-1 block">
+                      <label className="text-xs text-white font-bold mb-1 block">
                         {input.name || `arg${idx}`}
-                        <span className="text-muted-foreground font-normal"> ({input.type})</span>
+                        <span className="text-zinc-400 font-normal"> ({input.type})</span>
                       </label>
                       <Input
                         placeholder={`Enter ${input.type}`}
@@ -350,13 +367,13 @@ export function ActionBuilder({ onChange }: ActionBuilderProps) {
                             [`arg_${idx}`]: e.target.value,
                           })
                         }}
-                        className="font-mono text-xs bg-muted border-accent/40 text-foreground placeholder:text-muted-foreground"
+                        className="font-mono text-xs bg-zinc-900 border-zinc-600 text-white placeholder:text-zinc-500"
                       />
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-muted-foreground italic">No arguments required</p>
+                <p className="text-xs text-zinc-500 italic">No arguments required</p>
               )}
             </div>
           )}
@@ -365,12 +382,12 @@ export function ActionBuilder({ onChange }: ActionBuilderProps) {
           {step >= 4 && selectedFunctionData && (
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <div className="h-5 w-5 rounded-full bg-accent flex items-center justify-center text-xs font-bold text-card">
+                <div className="h-5 w-5 rounded-full bg-white flex items-center justify-center text-xs font-bold text-black">
                   5
                 </div>
-                <label className="text-xs font-bold text-accent tracking-wider">AMOUNT SOURCE</label>
+                <label className="text-xs font-bold text-white tracking-wider">AMOUNT SOURCE</label>
               </div>
-              <p className="text-xs text-muted-foreground mb-2 font-medium">
+              <p className="text-xs text-zinc-400 mb-2 font-medium">
                 Where should the transaction amount come from?
               </p>
               <Select value={amountSource} onValueChange={(val) => {
@@ -379,7 +396,7 @@ export function ActionBuilder({ onChange }: ActionBuilderProps) {
                 setMsgValue('')
                 setStep(5)
               }}>
-                <SelectTrigger className="bg-muted border-accent/40 text-foreground">
+                <SelectTrigger className="bg-zinc-900 border-zinc-600 text-white">
                   <SelectValue placeholder="Select amount source..." />
                 </SelectTrigger>
                 <SelectContent>
@@ -395,19 +412,19 @@ export function ActionBuilder({ onChange }: ActionBuilderProps) {
           {step >= 5 && amountSource === 'CALLDATA' && selectedFunctionData?.inputs && selectedFunctionData.inputs.length > 0 && (
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <div className="h-5 w-5 rounded-full bg-accent flex items-center justify-center text-xs font-bold text-card">
+                <div className="h-5 w-5 rounded-full bg-white flex items-center justify-center text-xs font-bold text-black">
                   6
                 </div>
-                <label className="text-xs font-bold text-accent tracking-wider">AMOUNT ARGUMENT INDEX</label>
+                <label className="text-xs font-bold text-white tracking-wider">AMOUNT ARGUMENT INDEX</label>
               </div>
-              <p className="text-xs text-muted-foreground mb-2 font-medium">
+              <p className="text-xs text-zinc-400 mb-2 font-medium">
                 Which argument represents the amount?
               </p>
               <Select value={amountIndex} onValueChange={(val) => {
                 setAmountIndex(val)
                 setStep(6)
               }}>
-                <SelectTrigger className="bg-muted border-accent/40 text-foreground">
+                <SelectTrigger className="bg-zinc-900 border-zinc-600 text-white">
                   <SelectValue placeholder="Select argument..." />
                 </SelectTrigger>
                 <SelectContent>
@@ -425,10 +442,10 @@ export function ActionBuilder({ onChange }: ActionBuilderProps) {
           {step >= 5 && amountSource === 'MSG_VALUE' && (
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <div className="h-5 w-5 rounded-full bg-accent flex items-center justify-center text-xs font-bold text-card">
+                <div className="h-5 w-5 rounded-full bg-white flex items-center justify-center text-xs font-bold text-black">
                   6
                 </div>
-                <label className="text-xs font-bold text-accent tracking-wider">ETH VALUE (Wei)</label>
+                <label className="text-xs font-bold text-white tracking-wider">ETH VALUE (Wei)</label>
               </div>
               <Input
                 placeholder="Enter amount in Wei"
@@ -437,7 +454,7 @@ export function ActionBuilder({ onChange }: ActionBuilderProps) {
                   setMsgValue(e.target.value)
                   setStep(6)
                 }}
-                className="bg-muted border-accent/40 text-foreground placeholder:text-muted-foreground font-mono text-xs"
+                className="bg-zinc-900 border-zinc-600 text-white placeholder:text-zinc-500 font-mono text-xs"
               />
             </div>
           )}
@@ -445,9 +462,9 @@ export function ActionBuilder({ onChange }: ActionBuilderProps) {
           {/* Step 6c: No input if NONE */}
           {step >= 5 && amountSource === 'NONE' && (
             <div className="space-y-2">
-              <Alert className="bg-background border-accent/50">
-                <AlertCircle className="h-4 w-4 text-accent" />
-                <AlertDescription className="text-xs text-muted-foreground">
+              <Alert className="bg-zinc-900 border-zinc-700">
+                <AlertCircle className="h-4 w-4 text-white" />
+                <AlertDescription className="text-xs text-zinc-400">
                   No amount will be transferred with this action.
                 </AlertDescription>
               </Alert>
@@ -458,12 +475,12 @@ export function ActionBuilder({ onChange }: ActionBuilderProps) {
           {((step >= 6 && amountSource !== '') || (step >= 5 && amountSource === 'NONE')) && (
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <div className="h-5 w-5 rounded-full bg-accent flex items-center justify-center text-xs font-bold text-card">
+                <div className="h-5 w-5 rounded-full bg-white flex items-center justify-center text-xs font-bold text-black">
                   7
                 </div>
-                <label className="text-xs font-bold text-accent tracking-wider">DEPOSIT REQUIREMENTS</label>
+                <label className="text-xs font-bold text-white tracking-wider">DEPOSIT REQUIREMENTS</label>
               </div>
-              <p className="text-xs text-muted-foreground mb-2 font-medium">
+              <p className="text-xs text-zinc-400 mb-2 font-medium">
                 Does this action require depositing tokens or ETH to the vault?
               </p>
               <Select value={requiresDeposit} onValueChange={(val) => {
@@ -471,7 +488,7 @@ export function ActionBuilder({ onChange }: ActionBuilderProps) {
                 setDepositTokenAddress('')
                 setDepositAmount('')
               }}>
-                <SelectTrigger className="bg-muted border-accent/40 text-foreground">
+                <SelectTrigger className="bg-zinc-900 border-zinc-600 text-white">
                   <SelectValue placeholder="Select deposit type..." />
                 </SelectTrigger>
                 <SelectContent>
@@ -487,12 +504,12 @@ export function ActionBuilder({ onChange }: ActionBuilderProps) {
           {requiresDeposit === 'ERC20' && (
             <div className="space-y-2">
               <div className="space-y-2">
-                <label className="text-xs font-bold text-accent tracking-wider">TOKEN ADDRESS</label>
+                <label className="text-xs font-bold text-white tracking-wider">TOKEN ADDRESS</label>
                 <Input
                   placeholder="0x..."
                   value={depositTokenAddress}
                   onChange={(e) => setDepositTokenAddress(e.target.value)}
-                  className="font-mono text-xs bg-muted border-accent/40 text-foreground placeholder:text-muted-foreground"
+                  className="font-mono text-xs bg-zinc-900 border-zinc-600 text-white placeholder:text-zinc-500"
                 />
                 {depositTokenAddress && (!depositTokenAddress.startsWith('0x') || depositTokenAddress.length !== 42) && (
                   <p className="text-xs text-destructive">
@@ -501,12 +518,12 @@ export function ActionBuilder({ onChange }: ActionBuilderProps) {
                 )}
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-bold text-accent tracking-wider">DEPOSIT AMOUNT</label>
+                <label className="text-xs font-bold text-white tracking-wider">DEPOSIT AMOUNT</label>
                 <Input
                   placeholder="Amount in Wei"
                   value={depositAmount}
                   onChange={(e) => setDepositAmount(e.target.value)}
-                  className="font-mono text-xs bg-muted border-accent/40 text-foreground placeholder:text-muted-foreground"
+                  className="font-mono text-xs bg-zinc-900 border-zinc-600 text-white placeholder:text-zinc-500"
                 />
               </div>
             </div>
@@ -515,12 +532,12 @@ export function ActionBuilder({ onChange }: ActionBuilderProps) {
           {/* Step 8b: ETH Amount */}
           {requiresDeposit === 'ETH' && (
             <div className="space-y-2">
-              <label className="text-xs font-bold text-accent tracking-wider">DEPOSIT AMOUNT (Wei)</label>
+              <label className="text-xs font-bold text-white tracking-wider">DEPOSIT AMOUNT (Wei)</label>
               <Input
                 placeholder="Amount in Wei"
                 value={depositAmount}
                 onChange={(e) => setDepositAmount(e.target.value)}
-                className="font-mono text-xs bg-muted border-accent/40 text-foreground placeholder:text-muted-foreground"
+                className="font-mono text-xs bg-zinc-900 border-zinc-600 text-white placeholder:text-zinc-500"
               />
             </div>
           )}
@@ -529,12 +546,12 @@ export function ActionBuilder({ onChange }: ActionBuilderProps) {
           {((step >= 6 && amountSource !== '') || (step >= 5 && amountSource === 'NONE')) && (
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <div className="h-5 w-5 rounded-full bg-accent flex items-center justify-center text-xs font-bold text-card">
+                <div className="h-5 w-5 rounded-full bg-white flex items-center justify-center text-xs font-bold text-black">
                   8
                 </div>
-                <label className="text-xs font-bold text-accent tracking-wider">TOKEN ALLOWANCES</label>
+                <label className="text-xs font-bold text-white tracking-wider">TOKEN ALLOWANCES</label>
               </div>
-              <p className="text-xs text-muted-foreground mb-2 font-medium">
+              <p className="text-xs text-zinc-400 mb-2 font-medium">
                 Does this action need ERC20 token spending approval? (e.g., approval to Uniswap Router to spend tokens on behalf of the vault)
               </p>
               <Select 
@@ -549,7 +566,7 @@ export function ActionBuilder({ onChange }: ActionBuilderProps) {
                   }
                 }}
               >
-                <SelectTrigger className="bg-muted border-accent/40 text-foreground">
+                <SelectTrigger className="bg-zinc-900 border-zinc-600 text-white">
                   <SelectValue placeholder="Select..." />
                 </SelectTrigger>
                 <SelectContent>
@@ -564,9 +581,9 @@ export function ActionBuilder({ onChange }: ActionBuilderProps) {
           {requiresAllowance && (
             <div className="space-y-4">
               {allowances.map((allowance, idx) => (
-                <div key={idx} className="space-y-2 p-4 border border-accent/30 rounded-lg bg-background/50">
+                <div key={idx} className="space-y-2 p-4 border border-zinc-700 rounded-lg bg-zinc-900">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-bold text-accent tracking-wider">
+                    <span className="text-xs font-bold text-white tracking-wider">
                       ALLOWANCE {idx + 1}
                     </span>
                     {allowances.length > 1 && (
@@ -584,7 +601,7 @@ export function ActionBuilder({ onChange }: ActionBuilderProps) {
                   </div>
                   
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-accent tracking-wider">TOKEN ADDRESS</label>
+                    <label className="text-xs font-bold text-white tracking-wider">TOKEN ADDRESS</label>
                     <Input
                       placeholder="0x... (ERC20 token to approve)"
                       value={allowance.token}
@@ -593,7 +610,7 @@ export function ActionBuilder({ onChange }: ActionBuilderProps) {
                         newAllowances[idx].token = e.target.value
                         setAllowances(newAllowances)
                       }}
-                      className="font-mono text-xs bg-muted border-accent/40 text-foreground placeholder:text-muted-foreground"
+                      className="font-mono text-xs bg-zinc-900 border-zinc-600 text-white placeholder:text-zinc-500"
                     />
                     {allowance.token && (!allowance.token.startsWith('0x') || allowance.token.length !== 42) && (
                       <p className="text-xs text-destructive">
@@ -603,7 +620,7 @@ export function ActionBuilder({ onChange }: ActionBuilderProps) {
                   </div>
                   
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-accent tracking-wider">SPENDER ADDRESS</label>
+                    <label className="text-xs font-bold text-white tracking-wider">SPENDER ADDRESS</label>
                     <Input
                       placeholder="0x... (e.g., Uniswap Router)"
                       value={allowance.spender}
@@ -612,7 +629,7 @@ export function ActionBuilder({ onChange }: ActionBuilderProps) {
                         newAllowances[idx].spender = e.target.value
                         setAllowances(newAllowances)
                       }}
-                      className="font-mono text-xs bg-muted border-accent/40 text-foreground placeholder:text-muted-foreground"
+                      className="font-mono text-xs bg-zinc-900 border-zinc-600 text-white placeholder:text-zinc-500"
                     />
                     {allowance.spender && (!allowance.spender.startsWith('0x') || allowance.spender.length !== 42) && (
                       <p className="text-xs text-destructive">
@@ -622,7 +639,7 @@ export function ActionBuilder({ onChange }: ActionBuilderProps) {
                   </div>
                   
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-accent tracking-wider">APPROVAL AMOUNT</label>
+                    <label className="text-xs font-bold text-white tracking-wider">APPROVAL AMOUNT</label>
                     <Input
                       placeholder="Amount in Wei (use max uint256 for unlimited)"
                       value={allowance.amount}
@@ -631,9 +648,9 @@ export function ActionBuilder({ onChange }: ActionBuilderProps) {
                         newAllowances[idx].amount = e.target.value
                         setAllowances(newAllowances)
                       }}
-                      className="font-mono text-xs bg-muted border-accent/40 text-foreground placeholder:text-muted-foreground"
+                      className="font-mono text-xs bg-zinc-900 border-zinc-600 text-white placeholder:text-zinc-500"
                     />
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-zinc-500">
                       Tip: Use "115792089237316195423570985008687907853269984665640564039457584007913129639935" for max approval
                     </p>
                   </div>
@@ -645,7 +662,7 @@ export function ActionBuilder({ onChange }: ActionBuilderProps) {
                 type="button"
                 variant="outline"
                 size="sm"
-                className="w-full border-accent/40 text-accent hover:bg-accent/10"
+                className="w-full border-zinc-600 text-white hover:bg-zinc-800"
                 onClick={() => {
                   setAllowances(prev => [...prev, { token: '', spender: '', amount: '' }])
                 }}
@@ -656,8 +673,136 @@ export function ActionBuilder({ onChange }: ActionBuilderProps) {
             </div>
           )}
 
+          {/* Step 10: Token Transfers */}
+          {((step >= 6 && amountSource !== '') || (step >= 5 && amountSource === 'NONE')) && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <div className="h-5 w-5 rounded-full bg-white flex items-center justify-center text-xs font-bold text-black">
+                  9
+                </div>
+                <label className="text-xs font-bold text-white tracking-wider">TOKEN TRANSFERS</label>
+              </div>
+              <p className="text-xs text-zinc-400 mb-2 font-medium">
+                Does this action need to transfer tokens to an external address before execution? (e.g., transfer tokens to a contract that requires them)
+              </p>
+              <Select 
+                value={requiresTransfer ? 'yes' : 'no'} 
+                onValueChange={(val) => {
+                  const needsTransfer = val === 'yes'
+                  setRequiresTransfer(needsTransfer)
+                  if (needsTransfer && transfers.length === 0) {
+                    setTransfers([{ token: '', to: '', amount: '' }])
+                  } else if (!needsTransfer) {
+                    setTransfers([])
+                  }
+                }}
+              >
+                <SelectTrigger className="bg-zinc-900 border-zinc-600 text-white">
+                  <SelectValue placeholder="Select..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="no">No transfers needed</SelectItem>
+                  <SelectItem value="yes">Yes, requires token transfers</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {/* Step 10a: Transfer Details */}
+          {requiresTransfer && (
+            <div className="space-y-4">
+              {transfers.map((transfer, idx) => (
+                <div key={idx} className="space-y-2 p-4 border border-zinc-700 rounded-lg bg-zinc-900">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-white tracking-wider">
+                      TRANSFER {idx + 1}
+                    </span>
+                    {transfers.length > 1 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0 text-destructive hover:text-destructive/80"
+                        onClick={() => {
+                          setTransfers(prev => prev.filter((_, i) => i !== idx))
+                        }}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-white tracking-wider">TOKEN ADDRESS</label>
+                    <Input
+                      placeholder="0x... (ERC20 token to transfer)"
+                      value={transfer.token}
+                      onChange={(e) => {
+                        const newTransfers = [...transfers]
+                        newTransfers[idx].token = e.target.value
+                        setTransfers(newTransfers)
+                      }}
+                      className="font-mono text-xs bg-zinc-900 border-zinc-600 text-white placeholder:text-zinc-500"
+                    />
+                    {transfer.token && (!transfer.token.startsWith('0x') || transfer.token.length !== 42) && (
+                      <p className="text-xs text-destructive">
+                        Invalid token address. Must be a 42-character hex address starting with 0x.
+                      </p>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-white tracking-wider">RECIPIENT ADDRESS</label>
+                    <Input
+                      placeholder="0x... (address to receive tokens)"
+                      value={transfer.to}
+                      onChange={(e) => {
+                        const newTransfers = [...transfers]
+                        newTransfers[idx].to = e.target.value
+                        setTransfers(newTransfers)
+                      }}
+                      className="font-mono text-xs bg-zinc-900 border-zinc-600 text-white placeholder:text-zinc-500"
+                    />
+                    {transfer.to && (!transfer.to.startsWith('0x') || transfer.to.length !== 42) && (
+                      <p className="text-xs text-destructive">
+                        Invalid recipient address. Must be a 42-character hex address starting with 0x.
+                      </p>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-white tracking-wider">TRANSFER AMOUNT</label>
+                    <Input
+                      placeholder="Amount in Wei"
+                      value={transfer.amount}
+                      onChange={(e) => {
+                        const newTransfers = [...transfers]
+                        newTransfers[idx].amount = e.target.value
+                        setTransfers(newTransfers)
+                      }}
+                      className="font-mono text-xs bg-zinc-900 border-zinc-600 text-white placeholder:text-zinc-500"
+                    />
+                  </div>
+                </div>
+              ))}
+              
+              {/* Add another transfer button */}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full border-zinc-600 text-white hover:bg-zinc-800"
+                onClick={() => {
+                  setTransfers(prev => [...prev, { token: '', to: '', amount: '' }])
+                }}
+              >
+                <Plus className="h-3 w-3 mr-2" />
+                Add Another Transfer
+              </Button>
+            </div>
+          )}
+
           {functions.length === 0 && step >= 3 && (
-            <Alert className="bg-background border-destructive/50">
+            <Alert className="bg-zinc-900 border-destructive/50">
               <AlertCircle className="h-4 w-4 text-destructive" />
               <AlertDescription className="text-xs text-destructive">No functions found in the provided ABI.</AlertDescription>
             </Alert>
@@ -669,14 +814,14 @@ export function ActionBuilder({ onChange }: ActionBuilderProps) {
       {!isExpanded ? (
         <button
           onClick={() => setIsExpanded(true)}
-          className="w-full text-left text-xs text-accent hover:text-accent/80 font-bold tracking-wide mt-2"
+          className="w-full text-left text-xs text-white hover:text-white/80 font-bold tracking-wide mt-2"
         >
           ► CONFIGURE ACTION
         </button>
       ) : (
         <button
           onClick={() => setIsExpanded(false)}
-          className="w-full text-left text-xs text-muted-foreground hover:text-accent mt-4 font-medium tracking-wide"
+          className="w-full text-left text-xs text-zinc-400 hover:text-white mt-4 font-medium tracking-wide"
         >
           ▼ HIDE DETAILS
         </button>

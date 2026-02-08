@@ -54,12 +54,12 @@ export function DepositModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md bg-card border-2 border-accent/40">
+      <DialogContent className="sm:max-w-md bg-black border-2 border-zinc-700">
         <DialogHeader>
-          <DialogTitle className="text-accent tracking-widest font-bold">
+          <DialogTitle className="text-white tracking-widest font-bold">
             {depositComplete ? 'DEPOSIT COMPLETE' : 'DEPOSIT REQUIRED'}
           </DialogTitle>
-          <DialogDescription className="text-muted-foreground">
+          <DialogDescription className="text-zinc-400">
             {depositComplete
               ? 'Your deposit has been successfully processed.'
               : 'This action requires depositing funds to your vault.'}
@@ -71,25 +71,25 @@ export function DepositModal({
             <>
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                  <span className="text-xs font-bold text-accent tracking-wider">TYPE</span>
-                  <span className="font-mono text-sm text-foreground">{depositType}</span>
+                  <span className="text-xs font-bold text-white tracking-wider">TYPE</span>
+                  <span className="font-mono text-sm text-white">{depositType}</span>
                 </div>
                 {depositType === 'ERC20' && tokenAddress && (
                   <div className="flex justify-between items-center">
-                    <span className="text-xs font-bold text-accent tracking-wider">TOKEN</span>
-                    <span className="font-mono text-xs text-foreground truncate max-w-50">
+                    <span className="text-xs font-bold text-white tracking-wider">TOKEN</span>
+                    <span className="font-mono text-xs text-white truncate max-w-50">
                       {tokenAddress}
                     </span>
                   </div>
                 )}
                 <div className="flex justify-between items-center">
-                  <span className="text-xs font-bold text-accent tracking-wider">AMOUNT</span>
-                  <span className="font-mono text-sm text-foreground">{amount} Wei</span>
+                  <span className="text-xs font-bold text-white tracking-wider">AMOUNT</span>
+                  <span className="font-mono text-sm text-white">{amount} Wei</span>
                 </div>
               </div>
 
-              <div className="bg-muted/50 border border-accent/20 rounded-lg p-3">
-                <p className="text-xs text-muted-foreground">
+              <div className="bg-zinc-900/50 border border-zinc-700 rounded-lg p-3">
+                <p className="text-xs text-zinc-400">
                   {depositType === 'ERC20'
                     ? 'You will be prompted to sign transactions to approve and deposit ERC20 tokens to your vault. Ensure the token address is valid and deployed on the current network.'
                     : 'You will be prompted to sign a transaction to deposit ETH to your vault.'}
@@ -101,7 +101,7 @@ export function DepositModal({
           {depositComplete && (
             <div className="flex flex-col items-center justify-center py-6 space-y-3">
               <CheckCircle2 className="h-16 w-16 text-green-500" />
-              <p className="text-sm text-muted-foreground text-center">
+              <p className="text-sm text-zinc-400 text-center">
                 Funds have been deposited to your vault. You can now proceed with strategy creation.
               </p>
             </div>
@@ -122,14 +122,14 @@ export function DepositModal({
                 variant="outline"
                 onClick={handleClose}
                 disabled={isDepositing}
-                className="border-accent text-accent hover:bg-accent/10"
+                className="border-zinc-600 text-white hover:bg-zinc-900"
               >
                 Cancel
               </Button>
               <Button
                 onClick={handleDeposit}
                 disabled={isDepositing}
-                className="bg-accent text-card hover:bg-accent/90"
+                className="bg-white text-black hover:bg-white/90"
               >
                 {isDepositing ? (
                   <>
@@ -145,7 +145,7 @@ export function DepositModal({
           {depositComplete && (
             <Button
               onClick={handleClose}
-              className="bg-accent text-card hover:bg-accent/90"
+              className="bg-white text-black hover:bg-white/90"
             >
               Continue
             </Button>
@@ -156,7 +156,7 @@ export function DepositModal({
                 setError(null)
                 handleDeposit()
               }}
-              className="bg-accent text-card hover:bg-accent/90"
+              className="bg-white text-black hover:bg-white/90"
             >
               Retry
             </Button>

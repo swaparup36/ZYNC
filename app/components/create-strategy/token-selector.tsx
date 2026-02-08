@@ -62,19 +62,19 @@ export function TokenSelector({
 
   return (
     <div className={cn('space-y-2', className)}>
-      <label className="text-xs font-bold text-accent tracking-wider">{label}</label>
+      <label className="text-xs font-bold text-white tracking-wider">{label}</label>
       
       <Select
         value={isCustomToken ? 'custom' : value || undefined}
         onValueChange={handleSelectChange}
       >
-        <SelectTrigger className="bg-muted border-accent/40 text-foreground w-full">
+        <SelectTrigger className="bg-zinc-900 border-zinc-600 text-white w-full">
           <SelectValue placeholder="Select token...">
             {selectedToken ? (
               <div className="flex items-center gap-2">
                 <TokenIcon symbol={selectedToken.symbol} />
                 <span className="font-medium">{selectedToken.symbol}</span>
-                <span className="text-muted-foreground text-xs">{selectedToken.name}</span>
+                <span className="text-zinc-400 text-xs">{selectedToken.name}</span>
               </div>
             ) : isCustomToken ? (
               <div className="flex items-center gap-2">
@@ -90,13 +90,13 @@ export function TokenSelector({
               <div className="flex items-center gap-2">
                 <TokenIcon symbol={token.symbol} />
                 <span className="font-medium">{token.symbol}</span>
-                <span className="text-muted-foreground text-xs">{token.name}</span>
+                <span className="text-zinc-400 text-xs">{token.name}</span>
               </div>
             </SelectItem>
           ))}
           <SelectItem value="custom">
             <div className="flex items-center gap-2">
-              <div className="h-5 w-5 rounded-full bg-muted-foreground/20 flex items-center justify-center text-[10px] font-bold">
+              <div className="h-5 w-5 rounded-full bg-zinc-700 flex items-center justify-center text-[10px] font-bold text-white">
                 +
               </div>
               <span className="font-medium">Custom Token</span>
@@ -110,7 +110,7 @@ export function TokenSelector({
           placeholder="Enter token address (0x...)"
           value={customAddress || (isCustomToken ? value : '')}
           onChange={(e) => handleCustomAddressChange(e.target.value)}
-          className="font-mono text-xs bg-muted border-accent/40 text-foreground placeholder:text-muted-foreground"
+          className="font-mono text-xs bg-zinc-900 border-zinc-600 text-white placeholder:text-zinc-500"
         />
       )}
 

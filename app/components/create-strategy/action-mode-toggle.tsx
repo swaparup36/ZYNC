@@ -14,18 +14,18 @@ export function ActionModeToggle({ value, onChange, className }: ActionModeToggl
   return (
     <div className={cn('w-full', className)}>
       <div className="flex items-center gap-2 mb-3">
-        <span className="text-[10px] font-bold text-accent tracking-[0.3em]">ACTION MODE</span>
+        <span className="text-[10px] font-bold text-zinc-400 tracking-[0.3em]">ACTION MODE</span>
       </div>
       
-      <div className="inline-flex h-10 w-full p-1 bg-muted rounded-lg border border-accent/20">
+      <div className="inline-flex h-10 w-full p-1 bg-zinc-900 rounded-lg border border-zinc-700">
         <button
           type="button"
           onClick={() => onChange('custom')}
           className={cn(
             'flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-bold tracking-wider rounded-md transition-all duration-200',
             value === 'custom'
-              ? 'bg-accent text-card shadow-md'
-              : 'text-muted-foreground hover:text-foreground hover:bg-accent/10'
+              ? 'bg-white text-black shadow-md'
+              : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
           )}
         >
           <svg
@@ -49,8 +49,8 @@ export function ActionModeToggle({ value, onChange, className }: ActionModeToggl
           className={cn(
             'flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-bold tracking-wider rounded-md transition-all duration-200',
             value === 'prebuilt'
-              ? 'bg-accent text-card shadow-md'
-              : 'text-muted-foreground hover:text-foreground hover:bg-accent/10'
+              ? 'bg-white text-black shadow-md'
+              : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
           )}
         >
           <svg
@@ -71,7 +71,7 @@ export function ActionModeToggle({ value, onChange, className }: ActionModeToggl
         </button>
       </div>
       
-      <p className="mt-2 text-[10px] text-muted-foreground">
+      <p className="mt-2 text-xs text-zinc-400">
         {value === 'custom' 
           ? 'Configure a custom contract interaction with full control over parameters.'
           : 'Use pre-configured DeFi actions like Uniswap swaps with simplified settings.'}

@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/card'
 import { ArrowLeft, Wallet, CheckCircle2, Plus } from 'lucide-react'
 import ConnectWalletButton from '@/components/ui/ConnectWalletButton'
 import { useAccount } from 'wagmi'
+import { toast } from '@/hooks/use-toast'
 import { createVault, decodeEventLogAndReturn, getUserVaults, STRATEGY_VAULT_FACTORY_ADDRESS, waitForTx } from '@/lib/transactionHandler'
 
 export default function SetupPage() {
@@ -30,14 +31,14 @@ export default function SetupPage() {
 
       if (!event) {
         console.log("VaultCreated event not found");
-        alert("VaultCreated event not found");
+        toast({ title: 'Error', description: 'VaultCreated event not found', variant: 'destructive' });
         return;
       }
 
       const decoded = await decodeEventLogAndReturn(event);
       if (!decoded || !decoded.args || decoded.args.length === 0) {
         console.log("Failed to decode event log");
-        alert("Failed to decode event log");
+        toast({ title: 'Error', description: 'Failed to decode event log', variant: 'destructive' });
         return;
       }
       console.log("decoded: ", decoded)
@@ -49,7 +50,7 @@ export default function SetupPage() {
       setVaultCreated(true);
     } catch (error) {
       console.error('Error creating vault:', error);
-      alert('Failed to create vault. Please try again.');
+      toast({ title: 'Error', description: 'Failed to create vault. Please try again.', variant: 'destructive' });
     } finally {
       setIsCreatingVault(false);
     }

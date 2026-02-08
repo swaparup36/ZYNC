@@ -40,38 +40,38 @@
 }
 
 .dark {
-  --background: #0d1117;
-  --foreground: #00ff00;
-  --card: #0a0f15;
-  --card-foreground: #00ff00;
-  --popover: #0a0f15;
-  --popover-foreground: #00ff00;
-  --primary: #00ff00;
-  --primary-foreground: #0a0f15;
-  --secondary: #1a2028;
-  --secondary-foreground: #00ff00;
-  --muted: #1a2028;
-  --muted-foreground: #4a8f6e;
-  --accent: #00ff00;
-  --accent-foreground: #0a0f15;
+  --background: #09090b;
+  --foreground: #fafafa;
+  --card: #0f0f11;
+  --card-foreground: #fafafa;
+  --popover: #0f0f11;
+  --popover-foreground: #fafafa;
+  --primary: #fafafa;
+  --primary-foreground: #09090b;
+  --secondary: #18181b;
+  --secondary-foreground: #fafafa;
+  --muted: #18181b;
+  --muted-foreground: #71717a;
+  --accent: #fafafa;
+  --accent-foreground: #09090b;
   --destructive: #dc2626;
   --destructive-foreground: #fef2f2;
-  --border: #00ff00;
-  --input: #0a0f15;
-  --ring: #00ff00;
-  --chart-1: #00ff00;
+  --border: #27272a;
+  --input: #18181b;
+  --ring: #d4d4d8;
+  --chart-1: #2563eb;
   --chart-2: #fbbf24;
   --chart-3: #dc2626;
   --chart-4: #34d399;
   --chart-5: #fbbf24;
-  --sidebar: #0a0f15;
-  --sidebar-foreground: #00ff00;
-  --sidebar-primary: #00ff00;
-  --sidebar-primary-foreground: #0a0f15;
-  --sidebar-accent: #1a2028;
-  --sidebar-accent-foreground: #00ff00;
-  --sidebar-border: #00ff00;
-  --sidebar-ring: #00ff00;
+  --sidebar: #09090b;
+  --sidebar-foreground: #fafafa;
+  --sidebar-primary: #fafafa;
+  --sidebar-primary-foreground: #09090b;
+  --sidebar-accent: #18181b;
+  --sidebar-accent-foreground: #fafafa;
+  --sidebar-border: #27272a;
+  --sidebar-ring: #d4d4d8;
 }
 
 @theme inline {
@@ -122,4 +122,55 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Rainbow border animation */
+@keyframes rainbow-border {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.rainbow-border-hover {
+  position: relative;
+  z-index: 0;
+}
+
+.rainbow-border-hover::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  padding: 2px;
+  background: linear-gradient(
+    90deg,
+    #ff0000,
+    #ff7f00,
+    #ffff00,
+    #00ff00,
+    #0000ff,
+    #4b0082,
+    #9400d3,
+    #ff0000
+  );
+  background-size: 400% 400%;
+  -webkit-mask: 
+    linear-gradient(#fff 0 0) content-box, 
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: -1;
+}
+
+.rainbow-border-hover:hover::before {
+  opacity: 1;
+  animation: rainbow-border 3s linear infinite;
 }

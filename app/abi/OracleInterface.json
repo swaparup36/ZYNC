@@ -27,7 +27,7 @@
     "methodIdentifiers": {
         "latestAnswer()": "50d25bcd"
     },
-    "rawMetadata": "{\"compiler\":{\"version\":\"0.8.19+commit.7dd6d404\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[],\"name\":\"latestAnswer\",\"outputs\":[{\"internalType\":\"int256\",\"name\":\"\",\"type\":\"int256\"}],\"stateMutability\":\"view\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"src/StrategyVault.sol\":\"OracleInterface\"},\"evmVersion\":\"paris\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":false,\"runs\":200},\"remappings\":[\":forge-std/=lib/forge-std/src/\"]},\"sources\":{\"src/StrategyVault.sol\":{\"keccak256\":\"0x69ef1d9bcf68f4e822f681863f6f6fd8d9239043d1548ea5befd88b8d98d3293\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://e2d1e53321a5f1739d440a7dc47c63669668d1a2159835416987972738dd564f\",\"dweb:/ipfs/Qmbw5iewxVhRxFj1TnNR8fnDYnxAJJiZxCwok1v1kja5cr\"]}},\"version\":1}",
+    "rawMetadata": "{\"compiler\":{\"version\":\"0.8.19+commit.7dd6d404\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[],\"name\":\"latestAnswer\",\"outputs\":[{\"internalType\":\"int256\",\"name\":\"\",\"type\":\"int256\"}],\"stateMutability\":\"view\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"src/StrategyVault.sol\":\"OracleInterface\"},\"evmVersion\":\"paris\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":false,\"runs\":200},\"remappings\":[\":forge-std/=lib/forge-std/src/\"]},\"sources\":{\"src/StrategyVault.sol\":{\"keccak256\":\"0xc469c85cbd3bb1e1ae80c33f792f98c1ae20ba040711ecf47f6c487d5c6394f0\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://abfa1e0e690f8a4e439edeff8359c7293cea25f489832ac18a7983dd2f654527\",\"dweb:/ipfs/QmZ7AjUJG7DmwLU2GwYMEuQJ7D9gj5fgTg9Y3G5boq5LjW\"]}},\"version\":1}",
     "metadata": {
         "compiler": {
             "version": "0.8.19+commit.7dd6d404"
@@ -79,15 +79,15 @@
         },
         "sources": {
             "src/StrategyVault.sol": {
-                "keccak256": "0x69ef1d9bcf68f4e822f681863f6f6fd8d9239043d1548ea5befd88b8d98d3293",
+                "keccak256": "0xc469c85cbd3bb1e1ae80c33f792f98c1ae20ba040711ecf47f6c487d5c6394f0",
                 "urls": [
-                    "bzz-raw://e2d1e53321a5f1739d440a7dc47c63669668d1a2159835416987972738dd564f",
-                    "dweb:/ipfs/Qmbw5iewxVhRxFj1TnNR8fnDYnxAJJiZxCwok1v1kja5cr"
+                    "bzz-raw://abfa1e0e690f8a4e439edeff8359c7293cea25f489832ac18a7983dd2f654527",
+                    "dweb:/ipfs/QmZ7AjUJG7DmwLU2GwYMEuQJ7D9gj5fgTg9Y3G5boq5LjW"
                 ],
                 "license": "UNLICENSED"
             }
         },
         "version": 1
     },
-    "id": 19
+    "id": 16
 }
