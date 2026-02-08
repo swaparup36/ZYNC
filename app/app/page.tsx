@@ -28,9 +28,17 @@ function DemoOne() {
                     Create Automation
                   </LiquidButton>
                 </Link>
-                <Button variant="outline" size="lg" className="text-base bg-transparent rounded-full px-8">
-                  View How It Works
-                </Button>
+                <Link href="/how-it-works">
+                  <Button variant="outline" size="lg" className="text-base bg-transparent rounded-full px-8">
+                    View How It Works
+                  </Button>
+                </Link>
+            </div>
+            <div className="mt-8 flex justify-center">
+                <Link href="/become-an-executor" className="inline-flex items-center gap-2 text-sm text-green-400 hover:text-green-300 transition font-medium">
+                  <span className="h-2 w-2 rounded-full bg-green-500"></span>
+                  Want to earn? Become an Executor →
+                </Link>
             </div> 
             </main>
             </div>
@@ -48,9 +56,12 @@ export default function LandingPage() {
             <Image src="/logo.png" alt="Smart Vault Logo" width={70} height={70} className="inline-block mr-2" />
           </div>
           <nav className="flex gap-6 items-center">
-            <button className="text-sm text-muted-foreground hover:text-foreground transition">
+            <Link href="/how-it-works" className="text-sm text-muted-foreground hover:text-foreground transition">
               How It Works
-            </button>
+            </Link>
+            <Link href="/become-an-executor" className="text-sm text-muted-foreground hover:text-foreground transition">
+              Become an Executor
+            </Link>
             <Link href="/vault">
               <Button size="sm" className='py-5'>
                 Create Automation
